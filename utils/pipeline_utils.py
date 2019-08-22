@@ -20,13 +20,15 @@ def create_pipeline(pipeline_name, verbose = True):
             Temporarily the multiple numpy arrays from the multiple raw kwd files
             Permanently the merged numpy array
     '''
+    print('# Creating a new pipeline #')
+          
     path = './pipelines/'+pipeline_name
     
-    if verbose : print('Initiating a new pipeline in %s ...' % path)
+    if verbose : print('Initializing a new pipeline in %s ...' % path)
     if not os.path.exists(path):
         os.makedirs(path)
         debugfile = open(path+'/debugfile.txt', 'w+')
-        if verbose : print('Done !')
+        if verbose : print('Done !\n')
         return 1
     else:
         print('A pipeline already exists under this name !')
