@@ -14,6 +14,8 @@ Contains the functions for :
 
 import numpy as np
 import h5py
+import os
+import sys
 
 def kwd_to_file(kwik_path, experiment_name, pipeline_name,
                channel_map, photodiode_index,
@@ -58,12 +60,12 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
     # -------------------------------------------------------------------------
     if output_type == 'bin' :
         if verbose : print('Saving numpy array as an int16 binary file ...')
-        data2.astype('int16').tofile('./pipelines/%s/%s.bin' % (pipeline_name, experiment_name))
-        photodiode_data.astype('int16').tofile('./pipelines/%s/%s_phtdiode.bin' % (pipeline_name, experiment_name))
-        timestamps.astype('int16').tofile('./pipelines/%s/%s_timestamps.bin' % (pipeline_name, experiment_name))
+        data2.tofile('./pipelines/%s/data.bin' % (pipeline_name))
+        photodiode_data.tofile('./pipelines/%s/phtdiode.bin' % (pipeline_name))
+        timestamps.tofile('./pipelines/%s/timestamps.bin' % (pipeline_name))
     
         if verbose : print('Done ! Running sanity check for input and saved file identity ...')
-        test = np.fromfile('./pipelines/%s/%s.bin' % (pipeline_name, experiment_name), dtype = 'int16')
+        test = np.fromfile('./pipelines/%s/data.bin' % (pipeline_name), dtype = 'int16')
         if np.array_equal(data2, test.reshape((-1, channel_map.shape[0]))) :
             del data2
             del test
@@ -75,11 +77,10 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
                 file.write('| VAR_nbr_channels = %s | \n'%channels.shape[0])
                 file.write('| VAR_timestamps_min = %s | \n' % timestamps.min())
                 file.write('| VAR_timestamps_max = %s | \n' % timestamps.max())
-                return 1
     
         else :
             print('Channel map shape and output shape are not matching. Unclog the pipeline in utils.py')
-            return 0
+            sys.exit()
     
             
     # -------------------------------------------------------------------------
@@ -101,6 +102,7 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
             print('Conversion from raw.kwd to npy file successfully completed !\n')
         
             with open('./pipelines/%s/debugfile.txt' %pipeline_name, 'a') as file:
+                file.write('| MERGED = True | \n')
                 file.write('| VAR_nbr_channels = %s | \n'%channels.shape[0])
                 file.write('| VAR_timestamps_min = %s | \n' % timestamps.min())
                 file.write('| VAR_timestamps_max = %s | \n' % timestamps.max())
@@ -108,44 +110,12 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
     
         else :
             print('Channel map shape and output shape are not matching. Unclog the pipeline in utils.py')
-            return 0
+            sys.exit()
         
     else :
         print('Output format not implemented.')
-        return 0
+        sys.exit()
     
-# --------------------------------------------------------------
-#
-# --------------------------------------------------------------
-        
-def np_to_bin(experiment_name,
-              pipeline_name,
-              verbose = True):
-    '''
-    Converts a .npy file to a binary file for Spyking Circus
-    This is used in case multiple raw kwd files have been transformed to numpy arrays and merged
-    '''
-    print('# Converting a npy file to bin #')
-    # -------------------------------------------------------------------------
-    if verbose : print('Loading numpy array from disk ...')
-    arr = np.load('./pipelines/%s/%s.npy'% (pipeline_name, experiment_name))
-    
-    # -------------------------------------------------------------------------
-    if verbose : print('Done ! Converting to bin file ...')
-    arr.astype('int16').tofile('./pipelines/%s/%s.bin' % (pipeline_name, experiment_name))
-    
-    # -------------------------------------------------------------------------
-    if verbose : print('Done ! Running sanity check ...')
-    
-    test = np.fromfile('./pipelines/%s/%s.bin' % (pipeline_name, experiment_name), dtype = 'int16')
-    chan_nbr = int(variable_from_debugfile('VAR_nbr_channels', pipeline_name))
-    
-    if np.array_equal(arr,test.reshape((-1, chan_nbr))) :
-        del arr
-        del test
-        
-        if verbose : print('Sanity check passed.')
-        print('Conversion from npy to bin successfully completed !\n')
         
 # --------------------------------------------------------------
 # @author: Josh Siegle
@@ -228,8 +198,132 @@ def variable_from_debugfile(lookup_str, pipeline_name) :
     Returns a variable stored under the lookup_str string in the debugfile.txt file
     '''
     file = open('./pipelines/%s/debugfile.txt'%pipeline_name, 'r')
+    var = ''
     for row in file :
         if lookup_str in row :
             var = row.split(' = ')[1].split(' |')[0]
     return var
+
+# --------------------------------------------------------------
+#
+# --------------------------------------------------------------
     
+def concatenate2D_from_disk(arrays_paths, pipeline_name,
+                            verbose = True):
+    '''
+    Loads a list of 2D int16 numpy array from disk and concatenate them row by row into a bin file
+    This is used to merge multiple kwd files into a single file for spike sorting.
+    Concatenation is done in the order in which the file are specified in arrays_paths
+    
+    The files are temporary loaded to get the shapes and the array is memmapped.
+    The function then iterates over the channels and loads the corresponding channel in each memory mapped array
+    
+    Args :
+        -arrays_paths LST : list of arrays paths to be loaded, ex ['A005_a17.npy', 'A007_a17.npy']
+        -pipeline_name STR : name of the pipeline 
+        -verbose BOOL : verbosity of the function
+    '''
+    print('# Concatenating electrode 2D arrays #')
+          
+    channel_length_list = []
+    memmap_list = []
+    for array_path in arrays_paths :
+        temp_arr = np.load('./pipelines/%s/%s' % (pipeline_name, array_path))
+        chan_length = temp_arr.shape[0]
+        chan_nbr = temp_arr.shape[1]
+        
+        channel_length_list.append(chan_length)
+        
+        del temp_arr
+        
+        memmap_arr = np.memmap(filename = './pipelines/%s/%s' % (pipeline_name, array_path),
+                               dtype = 'int16',
+                               shape = (chan_length, chan_nbr),
+                               mode = 'r+')
+        memmap_list.append(memmap_arr)
+        
+        if verbose : print('Memory mapped file : %s of shape %s' % (array_path, (chan_length, chan_nbr)))
+        
+    if verbose : print('Concatenating arrays row by row ...')    
+    for chan in range(chan_nbr):
+        concat_list = []
+        for memmap in memmap_list:
+            concat_list.append(memmap[:,chan])
+            
+        concat = np.concatenate((concat_list))
+        
+        with open('./pipelines/%s/data.bin' % pipeline_name, 'a+') as file :
+            concat.astype('int16').tofile(file)
+            
+    if verbose : print('Done ! Running sanity check ...') #due to file size we can't match shape directly
+    merged_size = os.path.getsize('./pipelines/%s/data.bin' % pipeline_name)
+    arrays_size = np.sum([os.path.getsize('./pipelines/%s/%s' % (pipeline_name,x)) for x in arrays_paths])
+    
+    if arrays_size-merged_size < 300 : #the size of the header is 256 bits (bytes?)
+        if verbose : print('Sanity check passed.')
+        
+        for array_path in arrays_paths :
+            os.remove('./pipelines/%s/%s' % (pipeline_name, array_path))
+        if verbose : print('Temporary files deleted.')
+        
+        print('Concatenation of 2D arrays completed !\n')
+    
+    else :
+        print('Merged arrays size is not equal to the sum of arrays + header size.')
+        sys.exit()
+
+# --------------------------------------------------------------
+#
+# --------------------------------------------------------------
+    
+def concatenate1D_from_disk(arrays_paths, pipeline_name,
+                            output_name,
+                            verbose = True):
+    '''
+    Loads a list of 1D numpy array from disk and concatenate them 
+    This is used to merge timestamps (float64) or photodiodechannel(int16)
+    Concatenation is done in the order in which the file are specified in arrays_paths
+    
+    The files aren't memory mapped
+    
+    Args :
+        -arrays_paths LST : list of arrays paths to be loaded, ex ['A005_a17.npy', 'A007_a17.npy']
+        -pipeline_name STR : name of the pipeline 
+        -output_name STR : name of the concatenated output, whether 'phtdiode' or 'timestamps'
+        -verbose BOOL : verbosity of the function
+    '''
+    
+    print('# Concatenating %s 1D arrays #' %output_name)
+          
+    array_list = []
+    for array_path in arrays_paths :
+        arr = np.load('./pipelines/%s/%s' % (pipeline_name, array_path))
+        array_list.append(arr)
+        if verbose : print('Loaded file : %s of shape %s' % (array_path, arr.shape[0]))
+        
+    if verbose : print('Concatenating arrays ...')                
+    concat = np.concatenate((array_list))
+    
+    with open('./pipelines/%s/%s.bin' % (pipeline_name, output_name), 'a+') as file :
+        concat.tofile(file)
+            
+    if verbose : print('Done ! Running sanity check ...')
+    test = np.fromfile('./pipelines/%s/%s.bin' % (pipeline_name, output_name), dtype = type(concat[0]))
+    
+    if np.array_equal(concat, test) :
+        if verbose : print('Sanity check passed.')
+        
+        for array_path in arrays_paths :
+            os.remove('./pipelines/%s/%s' % (pipeline_name, array_path))
+        if verbose : print('Temporary files deleted.')
+        
+        print('Concatenation of 1D arrays completed !\n')
+    
+    else :
+        print('Mismatch in merged and single arrays.')
+        sys.exit()
+        
+# --------------------------------------------------------------
+#
+# --------------------------------------------------------------
+        
