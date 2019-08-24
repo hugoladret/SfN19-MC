@@ -19,7 +19,7 @@ import sys
 
 def kwd_to_file(kwik_path, experiment_name, pipeline_name,
                channel_map, photodiode_index,
-               output_type = 'bin',
+               output_type = 'bin', iterator = 0,
                verbose = True):
     '''
     Directly converts a kwik file (.raw.kwd extension) to a file for the pipeline,
@@ -35,6 +35,7 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
         -channel_map ARR = channel map of the channels to extract from the kwd file
         -photodiode_index INT = index of the photodiode in the raw data, usually an analog in the bottom rows
         -output_type STR = 'bin', 'npy', the type of conversion to use
+        -iterator INT = the # of the file, used in the name saving
         -verbose BOOL : whether the pipeline gets the right to talk
     '''
     print('# Converting a kwd file to a >%s< file #' % output_type)
@@ -52,7 +53,6 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
 
     del data
     
-    # -------------------------------------------------------------------------
     if verbose : print('Done ! Found %.3f seconds of recording. '% (timestamps.max() -timestamps.min()))
     
     # -------------------------------------------------------------------------
@@ -60,12 +60,12 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
     # -------------------------------------------------------------------------
     if output_type == 'bin' :
         if verbose : print('Saving numpy array as an int16 binary file ...')
-        data2.tofile('./pipelines/%s/data.bin' % (pipeline_name))
-        photodiode_data.tofile('./pipelines/%s/phtdiode.bin' % (pipeline_name))
-        timestamps.tofile('./pipelines/%s/timestamps.bin' % (pipeline_name))
+        data2.tofile('./pipelines/%s/mydata_%s.bin' % (pipeline_name,iterator))
+        photodiode_data.tofile('./pipelines/%s/extras/phtdiode_%s.bin' % (pipeline_name,iterator))
+        timestamps.tofile('./pipelines/%s/extras/timestamps_%s.bin' % (pipeline_name,iterator))
     
         if verbose : print('Done ! Running sanity check for input and saved file identity ...')
-        test = np.fromfile('./pipelines/%s/data.bin' % (pipeline_name), dtype = 'int16')
+        test = np.fromfile('./pipelines/%s/mydata_%s.bin' % (pipeline_name,iterator), dtype = 'int16')
         if np.array_equal(data2, test.reshape((-1, channel_map.shape[0]))) :
             del data2
             del test
@@ -74,9 +74,10 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
             print('Conversion from raw.kwd to int16 binary file successfully completed !\n')
             
             with open('./pipelines/%s/debugfile.txt' %pipeline_name, 'a') as file:
-                file.write('| VAR_nbr_channels = %s | \n'%channels.shape[0])
-                file.write('| VAR_timestamps_min = %s | \n' % timestamps.min())
-                file.write('| VAR_timestamps_max = %s | \n' % timestamps.max())
+                file.write('|-| File %s |-| \n' % iterator)
+                file.write('| nbr_channels = %s | \n'%channels.shape[0])
+                file.write('| timestamps_min = %s | \n' % timestamps.min())
+                file.write('| timestamps_max = %s | \n' % timestamps.max())
     
         else :
             print('Channel map shape and output shape are not matching. Unclog the pipeline in utils.py')
@@ -102,11 +103,10 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
             print('Conversion from raw.kwd to npy file successfully completed !\n')
         
             with open('./pipelines/%s/debugfile.txt' %pipeline_name, 'a') as file:
-                file.write('| MERGED = True | \n')
-                file.write('| VAR_nbr_channels = %s | \n'%channels.shape[0])
-                file.write('| VAR_timestamps_min = %s | \n' % timestamps.min())
-                file.write('| VAR_timestamps_max = %s | \n' % timestamps.max())
-                return 1
+                file.write('|-| File %s |-| \n' % iterator)
+                file.write('| nbr_channels = %s | \n'%channels.shape[0])
+                file.write('| timestamps_min = %s | \n' % timestamps.min())
+                file.write('| timestamps_max = %s | \n' % timestamps.max())
     
         else :
             print('Channel map shape and output shape are not matching. Unclog the pipeline in utils.py')

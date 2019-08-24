@@ -25,15 +25,16 @@ def create_pipeline(pipeline_name, verbose = True):
     path = './pipelines/'+pipeline_name
     
     if verbose : print('Initializing a new pipeline in %s ...' % path)
+    
     if not os.path.exists(path):
         os.makedirs(path)
+        os.makedirs(path+'/extras')
         with open('./pipelines/%s/debugfile.txt' %pipeline_name, 'a') as file:
-                file.write('Debug file \n')
+                file.write('## Debug file, do not delete unless you want to spike sorting to rerun ##\n')
         if verbose : print('Done !\n')
-        return 1
+        
     else:
-        return 0
-        print('A pipeline already exists under this name !')
+        print('A pipeline already exists under this name !\n')
        
 
     
