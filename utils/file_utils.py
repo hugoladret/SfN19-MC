@@ -61,8 +61,8 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
     if output_type == 'bin' :
         if verbose : print('Saving numpy array as an int16 binary file ...')
         data2.tofile('./pipelines/%s/mydata_%s.bin' % (pipeline_name,iterator))
-        photodiode_data.tofile('./pipelines/%s/extras/phtdiode_%s.bin' % (pipeline_name,iterator))
-        timestamps.tofile('./pipelines/%s/extras/timestamps_%s.bin' % (pipeline_name,iterator))
+        photodiode_data.tofile('./pipelines/%s/bins/phtdiode_%s.bin' % (pipeline_name,iterator))
+        timestamps.tofile('./pipelines/%s/bins/timestamps_%s.bin' % (pipeline_name,iterator))
     
         if verbose : print('Done ! Running sanity check for input and saved file identity ...')
         test = np.fromfile('./pipelines/%s/mydata_%s.bin' % (pipeline_name,iterator), dtype = 'int16')

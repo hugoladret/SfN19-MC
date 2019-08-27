@@ -46,8 +46,7 @@ def call_circus(filename, n_cpu, hostfile,
         call_string.append('-H %s' % hostfile)
 
     
-    print('\n# Calling Spyking-Circus with arguments : # \n%s'%call_string)   
-
+    print('\n# Calling Spyking-Circus with arguments : # \n%s'%call_string)
     subprocess.call(call_string,
                      cwd = './pipelines/%s/' % pipeline_name)
     

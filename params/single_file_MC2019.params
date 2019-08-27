@@ -4,7 +4,7 @@
 file_format    = raw_binary
 stream_mode    = None                  
 mapping        = ./map.prb                      
-suffix         = spkc                  
+suffix         =                   
 overwrite      = True                  
 parallel_hdf5  = True                  
 output_dir     =   
@@ -104,7 +104,7 @@ make_plots     = png        # Generate sanity plots of the validation [Nothing o
 safety_time    = 1          # Temporal zone around which spikes are isolated [in ms]
 max_elts       = 1000       # Max number of collected events per templates
 output_dim     = 5          # Percentage of variance explained while performing PCA
-cc_merge       = 0.975      # If CC between two templates is higher, they are merged
+cc_merge       = 1      # If CC between two templates is higher, they are merged
 noise_thr      = 0.8        # Minimal amplitudes are such than amp*min(templates) < noise_thr*threshold
 
 [noedits]
