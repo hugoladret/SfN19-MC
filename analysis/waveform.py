@@ -21,6 +21,12 @@ def waveform_analysis(folder_list,
                           n_spikes, window_size,
                           n_clusters, k_init,
                           debug_plot, verbose) :
+    '''
+    Get waveforms for all clusters in folder_list's subfolders,
+    characterizes them and classifies them with a KMean
+    the output identity is saved in the neuron subfolder
+    '''
+    
     print('\n# Performing waveform analysis')
           
     # get the classif points using spiketimes and raw signals
@@ -29,9 +35,11 @@ def waveform_analysis(folder_list,
     
     # show caracterisation of waveform and mean + std waveform
     if debug_plot :
+        if verbose : print('Plotting waveforms')
         plot_waveforms(folder_list)
     
     # perform the k-mean clustering
+    if verbose : print('Running K-means')
     kmean_waveforms(folder_list, n_clusters, k_init, debug_plot)
 
 # --------------------------------------------------------------
@@ -91,9 +99,11 @@ def caracterise_waveforms(folder_list, n_chan,
 def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
     '''
     Perform k-mean clustering from the available waveform caracterisation points in /results
+    DO NOT FLIP THE ORDER OF FIRST AND SECOND CLASS TRIPLETS 
     '''
     
     all_carac_points = []
+    path_to_carac_points = [] #use to write the kmeans info
     for folder in folder_list :
         
         folder_path = './results/%s/' % folder
@@ -104,6 +114,7 @@ def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
             subfolder_path = folder_path + cluster_folder + '/'
             carac_points = np.load(subfolder_path + 'waveform_classif_points.npy')
             all_carac_points.append(carac_points)
+            path_to_carac_points.append(subfolder_path)
             
             
     kmeans = cluster.KMeans(n_clusters = n_clusters, init = k_init,
@@ -115,10 +126,13 @@ def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
     for i in range(len(kmeans.labels_)) :
         if kmeans.labels_[i] == 0 :
             first_class_triplets.append(all_carac_points[i])
+            with open(path_to_carac_points[i] + '/cluster_info.py', 'a') as file :
+                file.write('putative_type = "inh"\n')
         else :
             second_class_triplets.append(all_carac_points[i])
-    print(first_class_triplets)
-    print(second_class_triplets)
+            with open(path_to_carac_points[i] + '/cluster_info.py', 'a') as file :
+                file.write('putative_type = "exc"\n')
+
     xs1, ys1, zs1 = [], [], []
     for i in first_class_triplets :
             xs1.append(i[0])
@@ -134,6 +148,8 @@ def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
     if debug_plot :
         plot_KMeans(xs1, ys1, zs1,
                     xs2, ys2, zs2)
+        
+    print(kmeans.labels_)
 
 # --------------------------------------------------------------
 #

@@ -75,7 +75,7 @@ def clean_up(pipeline_name, verbose = True) :
     removes the channel map and the parameter files
     move merged and clean data into the main folder - rewrites dat_path and dir_path accordingly
     '''
-    print('# Cleaning up result folder #')
+    print('# Cleaning up pipeline folder #')
           
     binpath = './pipelines/%s/bins/' % pipeline_name
     mainpath = './pipelines/%s/' % pipeline_name
