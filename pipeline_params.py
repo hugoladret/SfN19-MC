@@ -54,3 +54,7 @@ debug_plot = True #show the carac points and mean waveform
 
 n_clusters = 2 # K-means number of cluster
 k_init = 'k-means++' # K-means init method, K++ uses the pca as barycenters
+
+# --------------------------------------------------------------
+# MC analysis parameters
+# --------------------------------------------------------------
