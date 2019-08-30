@@ -7,13 +7,14 @@ Created on Tue Aug 20 14:44:11 2019
 """
 
 import numpy as np
-import csv
+import sys
 from scipy.signal import butter, lfilter
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D 
 from sklearn import cluster
 import os 
 import imp
+import fileinput
 
 def waveform_analysis(folder_list,
                           n_chan, 
@@ -41,6 +42,8 @@ def waveform_analysis(folder_list,
     # perform the k-mean clustering
     if verbose : print('Running K-means')
     kmean_waveforms(folder_list, n_clusters, k_init, debug_plot)
+    
+    print('Waveform analysis complete')
 
 # --------------------------------------------------------------
 #
@@ -95,7 +98,10 @@ def caracterise_waveforms(folder_list, n_chan,
             np.save(subfolder_path + 'waveform_classif_points.npy', true_classif_points)
             np.save(subfolder_path + 'waveform_plot_points.npy', plot_classif_points)
 
-
+# --------------------------------------------------------------
+#
+# --------------------------------------------------------------
+            
 def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
     '''
     Perform k-mean clustering from the available waveform caracterisation points in /results
@@ -126,12 +132,12 @@ def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
     for i in range(len(kmeans.labels_)) :
         if kmeans.labels_[i] == 0 :
             first_class_triplets.append(all_carac_points[i])
-            with open(path_to_carac_points[i] + '/cluster_info.py', 'a') as file :
-                file.write('putative_type = "inh"\n')
+            replace_if_exist(path_to_carac_points[i] + '/cluster_info.py',
+                             'putative_type', 'putative_type = "inh"\n')
         else :
             second_class_triplets.append(all_carac_points[i])
-            with open(path_to_carac_points[i] + '/cluster_info.py', 'a') as file :
-                file.write('putative_type = "exc"\n')
+            replace_if_exist(path_to_carac_points[i] + '/cluster_info.py',
+                             'putative_type', 'putative_type = "exc"\n')
 
     xs1, ys1, zs1 = [], [], []
     for i in first_class_triplets :
@@ -148,8 +154,6 @@ def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
     if debug_plot :
         plot_KMeans(xs1, ys1, zs1,
                     xs2, ys2, zs2)
-        
-    print(kmeans.labels_)
 
 # --------------------------------------------------------------
 #
@@ -161,13 +165,13 @@ def plot_KMeans(xs1, ys1, zs1,
     Plots Kmeans classification of all the clusters
     '''
     # todo : animate
-    fig = plt.figure(figsize = (10,10))
+    fig = plt.figure(figsize = (8,8))
     ax = fig.add_subplot(111, projection = '3d')
     
     ax.scatter(xs2, ys2, zs2,
-                   c = 'b', label = 'Wide-spiking cells PC')
+                   c = 'r', label = 'Wide-spiking cells PC')
     ax.scatter(xs1, ys1, zs1,
-               c = 'r', label = 'Narrow-spiking cells INs')
+               c = 'b', label = 'Narrow-spiking cells INs')
     
     ax.set_xlabel('Half width (points)')
     ax.set_ylabel('Trough to peak (points)')
@@ -176,6 +180,7 @@ def plot_KMeans(xs1, ys1, zs1,
     
     ax.view_init(elev=35, azim=45)
     plt.legend()
+    fig.savefig('./results/Kmeans.pdf', format = 'pdf', bbox_inches = 'tight')
     plt.show()
     
 # --------------------------------------------------------------
@@ -243,6 +248,7 @@ def plot_waveforms(folder_list):
                 if i == 0 : ax[i,j].set_title(title_list[i] + ' - mean and std waveform')
                 else : ax[i,j].set_title(title_list[i])
                 
+    fig.savefig('./results/Waveforms.pdf', format = 'pdf', bbox_inches = 'tight') 
     plt.show()
     
 # --------------------------------------------------------------
@@ -321,7 +327,26 @@ def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return array[idx]
+ 
+# --------------------------------------------------------------
+#
+# --------------------------------------------------------------
     
+def replace_if_exist(file, searchExp, replaceExp):
+    '''
+    Changes the value of a variable in a .py file if it exists, otherwise writes it
+    replaceExp must contain \n for formatting
+    '''
     
+    infile = False
+    for line in fileinput.input(file, inplace=1):
+        if searchExp in line:
+            line = replaceExp
+            infile = True
+        sys.stdout.write(line)
+     
+    if infile == False :
+        with open(file, 'a') as file :
+            file.write(replaceExp)
 
             

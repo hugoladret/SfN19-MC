@@ -21,7 +21,7 @@ print('########################\n\n')
 # -------------------------------------------------------------------------
 # Main Script
 # -------------------------------------------------------------------------    
-waveform.waveform_analysis(folder_list=prm.analysis_folders, n_chan=len(prm.channel_map),
+waveform.waveform_analysis(folder_list=prm.wav_analysis_folders, n_chan=len(prm.channel_map),
                            lowcut=prm.lowcut, highcut = prm.highcut, fs = prm.fs, order = prm.order,
                            n_spikes = prm.n_spikes, window_size = prm.window_size,
                            debug_plot = prm.debug_plot, verbose=prm.verbose,
