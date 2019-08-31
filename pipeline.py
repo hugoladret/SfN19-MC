@@ -12,10 +12,10 @@ import sys
 from analysis import waveform
 
 
-# TODO : add a visualisation function to double check photodiode index
 # TODO : Kilosort support (or do I ?)
 # TODO redo the debug file in a .py file
 # TODO rewrite everything with proper naming convention ? :-(
+# TODO merge pipeline and pipeline analysis
 
 print('#########################')
 print('# Pre-analysis pipeline #')

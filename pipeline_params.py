@@ -32,12 +32,23 @@ show_results = True
 do_clean = True # moves useful files and removes useless ones
 export = True # moves the files to result folder
 
+
+
+
+
+
 # --------------------------------------------------------------
 # Analysis metaparameters
 # Usually wav_analysis_folders > other folders, as we want the maximum neurons to run a kmeans
 # But not all of those neurons were recorded during MotionClouds or gratings sessions
 # --------------------------------------------------------------
+do_wav = False
 wav_analysis_folders = ['A005_a17'] # result subfolder to be considered in the waveform analysis process
+
+do_photodiode = False
+photodiode_folders = ['A005_a17']
+
+do_mc = True
 mc_analysis_folders = ['A005_a17'] # result subfolder to be considered in the MotionClouds analysis process
 
 # --------------------------------------------------------------
@@ -56,5 +67,45 @@ n_clusters = 2 # K-means number of cluster
 k_init = 'k-means++' # K-means init method, K++ uses the pca as barycenters
 
 # --------------------------------------------------------------
-# MC analysis parameters
+# Photodiode extraction parameters 
 # --------------------------------------------------------------
+beg_index = 30 # int(len(signal)/beg_index), index at which to end the signal beg visualisation
+end_index = 29 # end_index * int(len(signal)/beg_index), index at which to start the signal end visualisation
+flash_height_percentile = 99 # np.percentile(signal, 99) height of photodiode blinks
+baseline_height_percentile = 50 # height of the average signal, to distinguish start and end
+width = 200 #units
+
+# --------------------------------------------------------------
+# Sequence generation
+# --------------------------------------------------------------
+seq_type = 'tc_fix_mc' 
+
+if seq_type == 'long_fix_mc' :
+    N_thetas = 12 # np.linspace(min_theta, max_theta, N_thetas)
+    min_theta = 0
+    max_theta = np.pi
+    
+    N_Bthetas = 8 # np.linspace(min_btheta, max_btheta, N_Bthetas)
+    min_btheta = np.pi/2 
+    max_btheta = np.pi/32
+    rectification_btheta = 2.5
+    
+    stim_duration = 2 # duration of stim for debug purposes
+    repetition = 15 # nr of sequence repetition
+    
+    seed = 42 # random state during stim genration
+    
+elif seq_type == 'tc_fix_mc' :
+    N_thetas = 12 # np.linspace(min_theta, max_theta, N_thetas)
+    min_theta = 0
+    max_theta = np.pi
+    
+    N_Bthetas = 8 # np.linspace(min_btheta, max_btheta, N_Bthetas)
+    min_btheta = np.pi/2 
+    max_btheta = np.pi/32
+    rectification_btheta = 2.5
+    
+    stim_duration = 2 # duration of stim for debug purposes
+    repetition = 5 # nr of sequence repetition
+    
+    seed = 42 # random state during stim genration

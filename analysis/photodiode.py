@@ -9,6 +9,33 @@ Created on Tue Aug 20 14:44:11 2019
 import numpy as np
 import matplotlib.pyplot as plt
 
+def export_sequences_times(folder_list, beg_index, end_index,
+                           flash_height, baseline_height, width,
+                           verbose) :
+    '''
+    Loops through the folders and export photodiode times
+    '''
+    print('# Extracting sequences times from photodiode #')
+    for folder in folder_list :
+        if verbose : print('Extracting from %s folder' % folder)
+        signal = np.fromfile('./pipelines/%s/phtdiode_0.bin' % folder, np.int16)
+        
+        beg = int(len(signal)/beg_index)
+        end = end_index * int(len(signal)/beg_index)
+        flash_height_level = np.percentile(signal, flash_height)
+        baseline_height_level = np.percentile(signal, baseline_height)
+        
+        
+        sequences_times = get_peak_times(signal = signal, beg_index = beg, end_index = end,
+                   flash_height = flash_height_level, baseline_height = baseline_height_level,
+                   width = width, folder = folder)
+        np.save('./results/%s/sequences_times.npy' % folder, sequences_times)
+    print('Photodiode analysis done !\n')
+ 
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+       
 def get_peak_times(signal, beg_index, end_index,
                    flash_height, baseline_height, width,
                    folder):
@@ -70,9 +97,13 @@ def get_peak_times(signal, beg_index, end_index,
     plt.suptitle(folder)
     fig.savefig('./results/%s/photodiode.pdf' % folder, format = 'pdf', bbox_inches = 'tight')
     plt.show()
-    
+        
     return sequences_times2
-   
+
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+    
 def grouper(iterable, width):
     '''
     Black-magic powered iterator from :https://stackoverflow.com/questions/15800895/finding-clusters-of-numbers-in-a-list
@@ -90,6 +121,10 @@ def grouper(iterable, width):
         prev = item
     if group:
         yield group
+
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
         
 def custom_peak(signal, width, height) :
     '''
@@ -105,11 +140,3 @@ def custom_peak(signal, width, height) :
         real_peaks.append((min_plat, max_plat))
         
     return real_peaks
-
-
-#signal = np.fromfile('../pipelines/A005_a17/phtdiode_0.bin', np.int16)
-#get_peak_times(signal = signal,
-#                beg_index = int(len(signal)/30), end_index = 29*int(len(signal)/30),
-#                flash_height = np.percentile(signal, 99), 
-#                baseline_height = np.percentile(signal, 50),
-#                width = 200, folder = 'A005_a17')

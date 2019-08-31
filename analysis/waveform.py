@@ -43,7 +43,7 @@ def waveform_analysis(folder_list,
     if verbose : print('Running K-means')
     kmean_waveforms(folder_list, n_clusters, k_init, debug_plot)
     
-    print('Waveform analysis complete')
+    print('Waveform analysis complete !\n')
 
 # --------------------------------------------------------------
 #
