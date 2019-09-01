@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 def export_sequences_times(folder_list, beg_index, end_index,
                            flash_height, baseline_height, width,
-                           verbose) :
+                           fs, verbose) :
     '''
     Loops through the folders and export photodiode times
     '''
@@ -29,9 +29,29 @@ def export_sequences_times(folder_list, beg_index, end_index,
         sequences_times = get_peak_times(signal = signal, beg_index = beg, end_index = end,
                    flash_height = flash_height_level, baseline_height = baseline_height_level,
                    width = width, folder = folder)
+        plot_sequences_length(sequences_times,fs, folder)
         np.save('./results/%s/sequences_times.npy' % folder, sequences_times)
     print('Photodiode analysis done !\n')
  
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+       
+def plot_sequences_length(sequences_times, fs, folder) :
+    fig, ax = plt.subplots(figsize = (10,5))
+    sequence_lengths = []
+    for sequence in sequences_times :
+        sequence_lengths.append((sequence[1]-sequence[0])/fs)
+    ax.plot(sequence_lengths)
+    
+    ax.set_ylabel('Time (s)')
+    ax.set_xlabel('Trial #')
+    ax.set_title('Duration of trials, std = %.3f, mean = %.3f' % (np.std(sequence_lengths), np.mean(sequence_lengths)))
+    
+    fig.savefig('./results/%s/photodiode_stability.pdf' % folder,
+                format = 'pdf', bbox_inches = 'tight')
+    plt.show()
+        
 # --------------------------------------------------------------
 # 
 # --------------------------------------------------------------

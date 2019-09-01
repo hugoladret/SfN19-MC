@@ -12,6 +12,7 @@ import numpy as np
 import itertools
 import os
 
+
 def mc_analysis (folder_list,
                    N_thetas, min_theta, max_theta,
                    N_Bthetas, min_btheta, max_btheta, rectification_btheta,
@@ -35,13 +36,13 @@ def mc_analysis (folder_list,
                        N_Bthetas, min_btheta, max_btheta, rectification_btheta,
                        stim_duration, repetition, seed,
                        verbose)
-        ori_selec(merged = False)
-        ori_selec(merged = True)
-        psth(merged = False)
-        psth(merged = True)
-        fr_dynamics(merged = False)
-        fr_dynamics(merged = True)
-        neurometric()
+#        ori_selec(merged = False)
+#        ori_selec(merged = True)
+#        psth(merged = False)
+#        psth(merged = True)
+#        fr_dynamics(merged = False)
+#        fr_dynamics(merged = True)
+#        neurometric()
 
 def ori_selec(folder, merged) :
     print('Not implemented')
@@ -116,7 +117,11 @@ def sync_sequences(folder,
                             'tot_spikes' : len(spiketimes_in_seq)}
             
             sequences_list_with_FR.append(new_seq_dict)
-            
+
+        spiketime_density = [sequence['tot_spikes'] for sequence in sequences_list_with_FR]
+
+        np.save(folder_path + cluster_folder + '/plot_spiketime_density.npy', spiketime_density)
+
         np.save(folder_path + cluster_folder + '/sequences_contents.npy', sequences_list_with_FR)
     
 # --------------------------------------------------------------
