@@ -13,48 +13,209 @@ import itertools
 import os
 
 
-def mc_analysis (folder_list,
+def mc_analysis(folder_list,
                    N_thetas, min_theta, max_theta,
                    N_Bthetas, min_btheta, max_btheta, rectification_btheta,
                    stim_duration, repetition, seed,
+                   fs, beg_psth, end_psth, binsize,
                    verbose) :
     '''
     Iterates through folders, linking spiketimes, stimulation info and timing together.
     Then, reloads this array and performs :
-        orientation selectivity for each B theta
         orientation selectivity for Bthetas merged
-        PSTH for each Btheta
+        orientation selectivity for each B theta
+        
         PSTH merged
-        Time-series evolution around the PSTH for each btheta
+        PSTH for each Btheta
+        
         Time-series evolution around the PSTH merged
+        Time-series evolution around the PSTH for each btheta
+        
         B theta fit for each btheta stimulation (previously called neurometric curves)
     '''
-    
+    print('# Running MotionClouds analysis#')
     for folder in folder_list :
         sync_sequences(folder,
                        N_thetas, min_theta, max_theta,
                        N_Bthetas, min_btheta, max_btheta, rectification_btheta,
                        stim_duration, repetition, seed,
                        verbose)
-#        ori_selec(merged = False)
-#        ori_selec(merged = True)
-#        psth(merged = False)
-#        psth(merged = True)
+        
+        ori_selec(folder = folder, merged = True, fs = fs,
+                  verbose = verbose)
+        ori_selec(folder = folder, merged = False, fs = fs,
+                  verbose = verbose)
+
+        psth(folder = folder, merged = True, fs = fs, 
+             beg_psth = beg_psth, end_psth = end_psth,
+             binsize = binsize,
+             verbose = verbose)
+        psth(folder = folder, merged = False, fs = fs, 
+             beg_psth = beg_psth, end_psth = end_psth,
+             binsize = binsize,
+             verbose = verbose)
+
 #        fr_dynamics(merged = False)
 #        fr_dynamics(merged = True)
 #        neurometric()
 
-def ori_selec(folder, merged) :
-    print('Not implemented')
+def ori_selec(folder, merged, fs,
+              verbose) :
+    '''
+    Runs orientation selectivity analysis on each cluster subfolder in the folder
+    saves directly as arrays for merged and non merged tuning curves of the cluster
+    '''
+    print('# Analyzing orientation selectivity #')
+    folder_path = './results/%s/' % folder
     
-def psth(folder, merged) :
-    print('Not implemented')
+    clusters_folders = [file for file in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, file))]
+    
+    for cluster_folder in clusters_folders :
+        if verbose : print('Analysing ./results/%s/%s' % (folder, cluster_folder))
+        
+        sequences_contents = np.load(folder_path + cluster_folder + '/sequences_contents.npy',
+                                     allow_pickle = True)
+        sorted_arr_theta = sorted(sequences_contents, key = lambda x:x['sequence_theta'])
+        
+        unique_thetas = np.unique([x['sequence_theta'] for x in sorted_arr_theta])
+        unique_bthetas = np.unique([x['sequence_btheta'] for x in sorted_arr_theta])
+        
+        #for further plot purposes
+        np.save(folder_path + cluster_folder + '/unique_thetas.npy', unique_thetas)
+        np.save(folder_path + cluster_folder + '/unique_bthetas.npy', unique_bthetas)
+        
+        #---------
+        # Merged
+        #---------
+        if merged : 
+        # Iterates through all possible thetas
+            TC_list = []
+            for u_theta in unique_thetas :
+                
+                # And through sequences to find them
+                spikes_per_theta = []
+                for seq in sorted_arr_theta :
+                    if seq['sequence_theta'] == u_theta :
+                        seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
+                        spikes_per_theta.append(seq['tot_spikes']/seq_duration)
+                        
+                TC_list.append(spikes_per_theta)
+                
+            means, stds = [], []
+            for theta in TC_list : 
+                means.append(np.mean(theta))
+                stds.append(np.std(theta))
+                
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_merged_means.npy', means)
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_merged_stds.npy', stds)
+                
+                
+        #-----------
+        # Not merged
+        #-----------
+        else :
+            TC_list_btheta = []
+            for u_btheta in unique_bthetas :
+                
+                # And all the thetas
+                TC_list_theta =[] 
+                for u_theta in unique_thetas :
+                    
+                    spikes_per_thetabtheta = []
+                    for seq in sorted_arr_theta :
+                        if seq['sequence_theta'] == u_theta and seq['sequence_btheta'] == u_btheta:
+                            seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
+                            spikes_per_thetabtheta.append(seq['tot_spikes']/seq_duration)
+                    TC_list_theta.append(spikes_per_thetabtheta)
+                TC_list_btheta.append(TC_list_theta)
+                
+            all_means, all_stds = [], []
+            for i in range(len(TC_list_btheta)):
+                means = np.mean(TC_list_btheta[i], axis = 1)
+                stds = np.std(TC_list_btheta[i], axis = 1)
+                
+                all_means.append(means)
+                all_stds.append(stds)
+
+            #saves a (b_theta, thetas) shaped arrays
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_means.npy', all_means)
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_stds.npy', all_stds)
+        
+    print('Done !')
+    
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+    
+def psth(folder, merged,fs, beg_psth, end_psth, binsize, verbose) :
+    print('# Analyzing PSTH #')
+          
+    folder_path = './results/%s/' % folder
+    clusters_folders = [file for file in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, file))]
+    
+    beg_psth = beg_psth * fs
+    end_psth = end_psth * fs
+    
+    n_bin = (end_psth/fs) - (beg_psth/fs)
+    n_bin *= 1000
+    n_bin /= binsize
+    
+    for cluster_folder in clusters_folders :
+        if verbose : print('Analysing ./results/%s/%s' % (folder, cluster_folder))
+        
+        sequences_contents = np.load(folder_path + cluster_folder + '/sequences_contents.npy',
+                                     allow_pickle = True)
+        sorted_arr_theta = sorted(sequences_contents, key = lambda x:x['sequence_theta'])
+        spiketimes = np.load(folder_path + cluster_folder + '/spiketimes.npy')
+        
+        unique_thetas = np.unique([x['sequence_theta'] for x in sorted_arr_theta])
+        unique_bthetas = np.unique([x['sequence_btheta'] for x in sorted_arr_theta])
+        
+        #---------
+        # Merged
+        #---------
+        if merged : 
+            PSTH_list = []
+            for u_theta in unique_thetas :
+                
+                # And through sequences to find them
+                spikes_per_theta = []
+                for seq in sorted_arr_theta :
+                    if seq['sequence_theta'] == u_theta :
+                        near_sequence_beg = np.where((spiketimes > seq['sequence_beg'] + beg_psth) & (spiketimes < seq['sequence_beg']  + end_psth))[0]
+                        spikes_per_theta.append( (spiketimes[near_sequence_beg]/fs) - (seq['sequence_beg']/fs))
+                PSTH_list.append(spikes_per_theta)
+                
+            np.save(folder_path + cluster_folder + '/plot_MC_PSTH_merged.npy', PSTH_list)
+         
+        #-----------
+        # Not merged
+        #-----------
+        else :
+            PSTH_list_btheta = []
+            for u_btheta in unique_bthetas :
+                
+                PSTH_list_theta = []
+                for u_theta in unique_thetas : 
+                    # And through sequences to find them
+                    spikes_per_thetabtheta = []
+                    for seq in sorted_arr_theta :
+                        if seq['sequence_theta'] == u_theta and seq['sequence_btheta'] == u_btheta :
+                            near_sequence_beg = np.where((spiketimes > seq['sequence_beg'] + beg_psth) & (spiketimes < seq['sequence_beg']  + end_psth))[0]
+                            spikes_per_thetabtheta.append( (spiketimes[near_sequence_beg]/fs) - (seq['sequence_beg']/fs))
+                    PSTH_list_theta.append(spikes_per_thetabtheta)
+                PSTH_list_btheta.append(PSTH_list_theta)
+                
+            np.save(folder_path + cluster_folder + '/plot_MC_PSTH_unmerged.npy', PSTH_list_btheta)
+        
+    print('Done ! ')
     
 def fr_dynamics(folder, merged) :
     print('Not implemented')
     
 def neurometric(folder) :
     print('Not implemented')
+    
 # --------------------------------------------------------------
 # 
 # --------------------------------------------------------------
@@ -70,6 +231,7 @@ def sync_sequences(folder,
     Then, for each cluster in the folder, saves a npy array that for each trial contains
     beg time, end time, theta, btheta, FR 
     '''
+    print('# Synchronizing sequences #')
     # Info regeneration
     full_sequence = generate_sequence_info(N_thetas = N_thetas, min_theta = min_theta, max_theta = max_theta,
                            N_Bthetas = N_Bthetas, min_btheta = min_btheta, max_btheta = max_btheta, 
@@ -113,7 +275,7 @@ def sync_sequences(folder,
                             'sequence_end' : sequence['sequence_end'],
                             'sequence_theta' : sequence['sequence_theta'],
                             'sequence_btheta' : sequence['sequence_btheta'],
-                            'spiketimes' : spiketimes_in_seq,
+                            'spiketimes' : spiketimes[spiketimes_in_seq],
                             'tot_spikes' : len(spiketimes_in_seq)}
             
             sequences_list_with_FR.append(new_seq_dict)

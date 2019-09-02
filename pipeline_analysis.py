@@ -40,4 +40,5 @@ if prm.do_mc :
                    N_Bthetas = prm.N_Bthetas, min_btheta = prm.min_btheta, max_btheta = prm.max_btheta,
                    rectification_btheta= prm.rectification_btheta,
                    stim_duration = prm.stim_duration, repetition = prm.repetition, seed = prm.seed,
+                   fs = prm.fs, beg_psth = prm.beg_psth, end_psth = prm.end_psth, binsize = prm.binsize,
                    verbose = prm.verbose)

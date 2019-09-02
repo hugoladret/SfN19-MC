@@ -109,3 +109,10 @@ elif seq_type == 'tc_fix_mc' :
     repetition = 5 # nr of sequence repetition
     
     seed = 42 # random state during stim genration
+
+# --------------------------------------------------------------
+# PSTH
+# --------------------------------------------------------------
+beg_psth = -0.5 #s
+end_psth = 1.5 #s
+binsize = 5 #ms
