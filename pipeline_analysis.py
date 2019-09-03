@@ -41,4 +41,5 @@ if prm.do_mc :
                    rectification_btheta= prm.rectification_btheta,
                    stim_duration = prm.stim_duration, repetition = prm.repetition, seed = prm.seed,
                    fs = prm.fs, beg_psth = prm.beg_psth, end_psth = prm.end_psth, binsize = prm.binsize,
+                   win_size = prm.win_size, step_size = prm.step_size,
                    verbose = prm.verbose)

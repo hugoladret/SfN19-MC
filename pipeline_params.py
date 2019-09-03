@@ -91,7 +91,7 @@ if seq_type == 'long_fix_mc' :
     rectification_btheta = 2.5
     
     stim_duration = 2 # duration of stim for debug purposes
-    repetition = 15 # nr of sequence repetition
+    repetition = 15 # nr of sequence repetition < ----------------------
     
     seed = 42 # random state during stim genration
     
@@ -116,3 +116,9 @@ elif seq_type == 'tc_fix_mc' :
 beg_psth = -0.5 #s
 end_psth = 1.5 #s
 binsize = 5 #ms
+
+# --------------------------------------------------------------
+# FR DYNAMICS
+# --------------------------------------------------------------
+win_size = .2 #s
+step_size = .002 #s

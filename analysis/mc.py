@@ -11,6 +11,7 @@ it's too late to change all the variables names
 import numpy as np
 import itertools
 import os
+from tqdm import tqdm
 
 
 def mc_analysis(folder_list,
@@ -18,6 +19,7 @@ def mc_analysis(folder_list,
                    N_Bthetas, min_btheta, max_btheta, rectification_btheta,
                    stim_duration, repetition, seed,
                    fs, beg_psth, end_psth, binsize,
+                   win_size, step_size,
                    verbose) :
     '''
     Iterates through folders, linking spiketimes, stimulation info and timing together.
@@ -55,10 +57,21 @@ def mc_analysis(folder_list,
              binsize = binsize,
              verbose = verbose)
 
-#        fr_dynamics(merged = False)
-#        fr_dynamics(merged = True)
+        fr_dynamics(folder = folder, merged = True, fs = fs,
+                beg_PST = beg_psth, end_PST = beg_psth,
+                win_size = win_size, step_size = step_size,
+                verbose = verbose)
+        fr_dynamics(folder = folder, merged = False, fs = fs,
+                beg_PST = beg_psth, end_PST = beg_psth,
+                win_size = win_size, step_size = step_size,
+                verbose = verbose)
+
 #        neurometric()
 
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+        
 def ori_selec(folder, merged, fs,
               verbose) :
     '''
@@ -206,12 +219,91 @@ def psth(folder, merged,fs, beg_psth, end_psth, binsize, verbose) :
                     PSTH_list_theta.append(spikes_per_thetabtheta)
                 PSTH_list_btheta.append(PSTH_list_theta)
                 
-            np.save(folder_path + cluster_folder + '/plot_MC_PSTH_unmerged.npy', PSTH_list_btheta)
+            np.save(folder_path + cluster_folder + '/plot_MC_PSTH_nonmerged.npy', PSTH_list_btheta)
         
     print('Done ! ')
     
-def fr_dynamics(folder, merged) :
-    print('Not implemented')
+def fr_dynamics(folder, merged, fs,
+                beg_PST, end_PST,
+                win_size, step_size,
+                verbose) :
+    '''
+    Slides a window over the spiketimes and computes the densities around the PST
+    '''
+    
+    print('# Analyzing FR dynamics #')
+          
+    folder_path = './results/%s/' % folder
+    clusters_folders = [file for file in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, file))]
+    
+    for cluster_folder in clusters_folders :
+        
+        sequences_contents = np.load(folder_path + cluster_folder + '/sequences_contents.npy',
+                                     allow_pickle = True)
+        sorted_arr_theta = sorted(sequences_contents, key = lambda x:x['sequence_theta'])
+        spiketimes = np.load(folder_path + cluster_folder + '/spiketimes.npy') / fs
+
+        unique_thetas = np.unique([x['sequence_theta'] for x in sorted_arr_theta])
+        unique_bthetas = np.unique([x['sequence_btheta'] for x in sorted_arr_theta])
+        
+        n_spikes_list = []
+        for beg in tqdm( np.arange(0, max(spiketimes), step_size), 'Smoothing %s densities' % (cluster_folder)) :
+            end = beg + win_size
+            spikes_in_window = np.where((spiketimes > beg) & (spiketimes < end))[0]
+            n_spikes_list.append(len(spikes_in_window))
+           
+        #---------
+        # Merged
+        #---------
+        if merged : 
+            PSTH_list = []
+            for u_theta in unique_thetas :
+                
+                # And through sequences to find them
+                spikes_per_theta = []
+                for seq in sorted_arr_theta :
+                    if seq['sequence_theta'] == u_theta :
+                        seq_beg = seq['sequence_beg'] / fs
+                        seq_end = seq_beg + end_PST
+                        seq_beg += beg_PST
+                        
+                        ind_beg = int(seq_beg / win_size)
+                        ind_end = int(seq_end / win_size)
+                        
+                        spikes_per_theta.append(n_spikes_list[ind_beg : ind_end])
+            
+                PSTH_list.append(spikes_per_theta)
+            np.save(folder_path + cluster_folder + '/plot_MC_FR_dynamics_merged.npy', PSTH_list)
+          
+        #-----------
+        # Not merged
+        #-----------
+        else : 
+            PSTH_list_btheta = []
+            for u_btheta in unique_bthetas :
+                
+                PSTH_list_theta = []
+                for u_theta in unique_thetas : 
+                    # And through sequences to find them
+                    spikes_per_thetabtheta = []
+                    for seq in sorted_arr_theta :
+                        if seq['sequence_theta'] == u_theta and seq['sequence_btheta'] == u_btheta :
+                            seq_beg = seq['sequence_beg'] / fs
+                        
+                            seq_end = seq_beg + end_PST
+                            seq_beg += beg_PST
+                            
+                            ind_beg = int(seq_beg / win_size)
+                            ind_end = int(seq_end / win_size)
+                            
+                            spikes_per_thetabtheta.append(n_spikes_list[ind_beg : ind_end])
+                            
+                    PSTH_list_theta.append(spikes_per_thetabtheta)
+                PSTH_list_btheta.append(PSTH_list_theta)
+                
+            np.save(folder_path + cluster_folder + '/plot_MC_FR_dynamics_nonmerged.npy', PSTH_list_btheta)
+            
+    print('Done ! ')
     
 def neurometric(folder) :
     print('Not implemented')
