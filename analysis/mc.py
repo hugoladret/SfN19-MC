@@ -12,6 +12,7 @@ import numpy as np
 import itertools
 import os
 from tqdm import tqdm
+from lmfit import Model, Parameters
 
 
 def mc_analysis(folder_list,
@@ -66,7 +67,9 @@ def mc_analysis(folder_list,
                 win_size = win_size, step_size = step_size,
                 verbose = verbose)
 
-#        neurometric()
+        neurometric(folder = folder, verbose = verbose)
+        
+        print(' # All MotionClouds analysis have been successfully performed  #')
 
 # --------------------------------------------------------------
 # 
@@ -121,6 +124,7 @@ def ori_selec(folder, merged, fs,
                 
             np.save(folder_path + cluster_folder + '/plot_MC_TC_merged_means.npy', means)
             np.save(folder_path + cluster_folder + '/plot_MC_TC_merged_stds.npy', stds)
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_merged_all.npy', TC_list)
                 
                 
         #-----------
@@ -153,6 +157,7 @@ def ori_selec(folder, merged, fs,
             #saves a (b_theta, thetas) shaped arrays
             np.save(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_means.npy', all_means)
             np.save(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_stds.npy', all_stds)
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_all.npy', TC_list_btheta)
         
     print('Done !')
     
@@ -222,6 +227,10 @@ def psth(folder, merged,fs, beg_psth, end_psth, binsize, verbose) :
             np.save(folder_path + cluster_folder + '/plot_MC_PSTH_nonmerged.npy', PSTH_list_btheta)
         
     print('Done ! ')
+    
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
     
 def fr_dynamics(folder, merged, fs,
                 beg_PST, end_PST,
@@ -304,9 +313,47 @@ def fr_dynamics(folder, merged, fs,
             np.save(folder_path + cluster_folder + '/plot_MC_FR_dynamics_nonmerged.npy', PSTH_list_btheta)
             
     print('Done ! ')
+
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
     
-def neurometric(folder) :
-    print('Not implemented')
+def neurometric(folder, verbose) :
+    '''
+    Loads the TC data from the cluster folder, fits a von mises to it 
+    and returns the neurometric curve (Btheta_fit vs btheta_stim) for each theta
+    NOT the fits, which will be later called in the plotter
+    '''
+    
+    print('# Fitting curve #')
+          
+    folder_path = './results/%s/' % folder
+    clusters_folders = [file for file in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, file))]
+    
+    for cluster_folder in clusters_folders :
+        if verbose : print('Analysing ./results/%s/%s' % (folder, cluster_folder))
+        
+        TC_data = np.load(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_all.npy')
+
+        B_theta_fit_list = []
+        tuning_fits_list = []
+        for it_0, btheta in enumerate(TC_data) :
+            # Make a tuning curve
+            mean_fr = np.mean(btheta, axis = 1)
+            xs = np.arange(0, len(mean_fr))
+            
+            best_vals, fit_report = fit_plot(mean_fr)
+            
+            B_theta_fit_list.append(best_vals['B'])
+            tuning_fits_list.append(tuning_function(x=xs,
+                                j=best_vals['j'], fmax=best_vals['fmax'],
+                                B=best_vals['B']) + mean_fr.min())
+            
+            np.save(folder_path + cluster_folder + '/plot_neurometric_Btheta_fits.npy', B_theta_fit_list)
+            np.save(folder_path + cluster_folder + '/plot_neurometric_fitted_TC.npy', tuning_fits_list)
+            
+    print(' Done ! ')
+           
     
 # --------------------------------------------------------------
 # 
@@ -375,7 +422,6 @@ def sync_sequences(folder,
         spiketime_density = [sequence['tot_spikes'] for sequence in sequences_list_with_FR]
 
         np.save(folder_path + cluster_folder + '/plot_spiketime_density.npy', spiketime_density)
-
         np.save(folder_path + cluster_folder + '/sequences_contents.npy', sequences_list_with_FR)
     
 # --------------------------------------------------------------
@@ -404,4 +450,38 @@ def generate_sequence_info(N_thetas, min_theta, max_theta,
                        % (repetition, len(sequence), len(full_sequence), len(full_sequence)*stim_duration))
     return full_sequence 
 
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+    
+def tuning_function(x, j, B, fmax):  # von mises, baseline is the minimum neuron activity
+    N = len(x)
+    if B == np.inf:
+        VM = np.ones_like(x)
+    else:
+        VM = np.exp((np.cos(2.*np.pi*(x-j)/N)-1.)/4/(B*np.pi/180)**2)
+    #VM /= VM.sum(axis=0)
+    return fmax * VM
 
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+    
+def fit_plot(array, datacol='.b', fitcol='k', data_kws=None, do_title=True,
+             seq_nbr=None):
+
+    x = np.linspace(0, len(array), len(array))
+    y = array
+    N = len(array)
+
+    mod = Model(tuning_function)
+    pars = Parameters()
+    y = y-np.min(y)
+    pars.add_many(('j', y.argmax(), True,  0.0, N), ('B', 15., True,  0.1, 360),
+                  ('fmax', y.max(), True,  0.0, 100.))
+
+
+    out = mod.fit(y, pars, x=x, nan_policy='omit')
+
+
+    return out.best_values, (1-out.residual.var() / np.var(y))

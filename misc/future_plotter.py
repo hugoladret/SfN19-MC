@@ -268,4 +268,80 @@ for i in range(len(TC_list_btheta)):
     
 plt.show()
 
+# ----------------------------------------------
+# Btheta fit
+# ---------------------------------------------
+def tuning_function(x, j, B, fmax):  # von mises, baseline is the minimum neuron activity
+    N = len(x)
+    if B == np.inf:
+        VM = np.ones_like(x)
+    else:
+        VM = np.exp((np.cos(2.*np.pi*(x-j)/N)-1.)/4/(B*np.pi/180)**2)
+    #VM /= VM.sum(axis=0)
+    return fmax * VM
 
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+    
+def fit_plot(array, datacol='.b', fitcol='k', data_kws=None, do_title=True,
+             seq_nbr=None):
+
+    x = np.linspace(0, len(array), len(array))
+    y = array
+    N = len(array)
+
+    mod = Model(tuning_function)
+    pars = Parameters()
+    y = y-np.min(y)
+    pars.add_many(('j', y.argmax(), True,  0.0, N), ('B', 15., True,  0.1, 360),
+                  ('fmax', y.max(), True,  0.0, 100.))
+
+
+    out = mod.fit(y, pars, x=x, nan_policy='omit')
+
+
+    return out.best_values, (1-out.residual.var() / np.var(y))
+
+TC_data = np.load('../results/A005_a17/cluster_22/plot_MC_TC_nonmerged_all.npy')
+TC_data2 = np.swapaxes(TC_data, 0, 1)
+
+B_theta_fit_list = []
+tuning_fits_list = []
+for it_0, btheta in enumerate(TC_data) :
+    # Make a tuning curve
+    fig = plt.figure(figsize = (10, 6))
+    ax = plt.subplot(111)
+    
+    mean_fr = np.mean(btheta, axis = 1)
+    xs = np.arange(0, len(mean_fr))
+    
+    best_vals, fit_report = fit_plot(mean_fr)
+    
+    for it, theta in enumerate(btheta): 
+        ax.errorbar(xs[it],
+                    mean_fr[it],
+                    yerr = np.std(theta, axis = 0), 
+                    fmt = 'o', c = 'b')
+    ax.plot(xs,
+            tuning_function(x=xs,
+                        j=best_vals['j'], fmax=best_vals['fmax'],
+                        B=best_vals['B']) + mean_fr.min(),
+        c='k')
+    ax.set_title('B theta stim = %.2f, B theta fit = %.2f, r² = %.2f' %
+                 (unique_bthetas[0], best_vals['B'], fit_report))
+    
+    B_theta_fit_list.append(best_vals['B'])
+    tuning_fits_list.append(tuning_function(x=xs,
+                        j=best_vals['j'], fmax=best_vals['fmax'],
+                        B=best_vals['B']) + mean_fr.min())
+    
+    plt.show()
+
+plt.plot(unique_bthetas*360/np.pi, B_theta_fit_list)
+plt.xlabel('B_theta stim')
+plt.ylabel('B_theta fit')
+plt.show()
+
+np.save('plot_neurometric_Btheta_fits.npy', B_theta_fit_list)
+np.save('plot_neurometric_fitted_TC.npy', tuning_fits_list)
