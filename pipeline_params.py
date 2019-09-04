@@ -42,10 +42,10 @@ export = True # moves the files to result folder
 # Usually wav_analysis_folders > other folders, as we want the maximum neurons to run a kmeans
 # But not all of those neurons were recorded during MotionClouds or gratings sessions
 # --------------------------------------------------------------
-do_wav = False
+do_wav = True
 wav_analysis_folders = ['A005_a17'] # result subfolder to be considered in the waveform analysis process
 
-do_photodiode = False
+do_photodiode = True
 photodiode_folders = ['A005_a17']
 
 do_mc = True

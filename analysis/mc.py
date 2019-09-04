@@ -260,6 +260,8 @@ def fr_dynamics(folder, merged, fs,
             end = beg + win_size
             spikes_in_window = np.where((spiketimes > beg) & (spiketimes < end))[0]
             n_spikes_list.append(len(spikes_in_window))
+            
+        np.save(folder_path + cluster_folder + '/plot_MC_FR_all.npy', n_spikes_list)
            
         #---------
         # Merged
