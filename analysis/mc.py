@@ -59,11 +59,11 @@ def mc_analysis(folder_list,
              verbose = verbose)
 
         fr_dynamics(folder = folder, merged = True, fs = fs,
-                beg_PST = beg_psth, end_PST = beg_psth,
+                beg_PST = beg_psth, end_PST = end_psth,
                 win_size = win_size, step_size = step_size,
                 verbose = verbose)
         fr_dynamics(folder = folder, merged = False, fs = fs,
-                beg_PST = beg_psth, end_PST = beg_psth,
+                beg_PST = beg_psth, end_PST = end_psth,
                 win_size = win_size, step_size = step_size,
                 verbose = verbose)
 
@@ -269,19 +269,24 @@ def fr_dynamics(folder, merged, fs,
         if merged : 
             PSTH_list = []
             for u_theta in unique_thetas :
-                
                 # And through sequences to find them
                 spikes_per_theta = []
                 for seq in sorted_arr_theta :
                     if seq['sequence_theta'] == u_theta :
+                        print(seq['sequence_beg'])
                         seq_beg = seq['sequence_beg'] / fs
                         seq_end = seq_beg + end_PST
                         seq_beg += beg_PST
                         
-                        ind_beg = int(seq_beg / win_size)
-                        ind_end = int(seq_end / win_size)
+                        ind_beg = int(seq_beg / step_size)
+                        ind_end = int(seq_end / step_size)
                         
                         spikes_per_theta.append(n_spikes_list[ind_beg : ind_end])
+                        print(seq_beg, seq_end)
+                        print(ind_beg, ind_end)
+                        print(n_spikes_list[ind_beg : ind_end])
+                        print('\n')
+                        
             
                 PSTH_list.append(spikes_per_theta)
             np.save(folder_path + cluster_folder + '/plot_MC_FR_dynamics_merged.npy', PSTH_list)
@@ -304,8 +309,8 @@ def fr_dynamics(folder, merged, fs,
                             seq_end = seq_beg + end_PST
                             seq_beg += beg_PST
                             
-                            ind_beg = int(seq_beg / win_size)
-                            ind_end = int(seq_end / win_size)
+                            ind_beg = int(seq_beg / step_size)
+                            ind_end = int(seq_end / step_size)
                             
                             spikes_per_thetabtheta.append(n_spikes_list[ind_beg : ind_end])
                             
