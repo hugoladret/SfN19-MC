@@ -8,9 +8,10 @@ verbose = True
 # --------------------------------------------------------------
 # Pre-sorting parameters
 # --------------------------------------------------------------
-kwd_path = ['../A005_a17/experiment1_100.raw.kwd'] # path of the raw files, must be of same dimension as experiment_name
-pipeline_name = 'A005_a17' # name of the folder created under /pipelines/
-experiment_name = ['A005_a17'] # name of the temporary files for concatenation cases
+kwd_path = ['../B008_ks/experiment1_100.raw.kwd'] # path of the raw files, must be of same dimension as experiment_name
+pipeline_name = 'B008ks_a17' # name of the folder created under /pipelines/
+experiment_name = ['B008ks_a17'] # name of the temporary files for concatenation cases
+
 channel_map = np.array([1, 17, 16, 32, 3, 19, 14, 30, 9, 25, 10, 20, 8, 24, 2, 29,
                         7, 26, 15, 21, 11, 23, 12, 28, 6, 18, 13, 22, 5, 27, 4, 31]) - 1  # channel map to extract from the raw file
 photodiode_index = 70 # index of the photodiode signal in the raw files
@@ -43,13 +44,16 @@ export = True # moves the files to result folder
 # But not all of those neurons were recorded during MotionClouds or gratings sessions
 # --------------------------------------------------------------
 do_wav = True
-wav_analysis_folders = ['A005_a17'] # result subfolder to be considered in the waveform analysis process
+wav_analysis_folders = ['B008ks_a17'] # result subfolder to be considered in the waveform analysis process
 
 do_photodiode = True
-photodiode_folders = ['A005_a17']
+photodiode_folders = ['B008ks_a17']
 
 do_mc = True
-mc_analysis_folders = ['A005_a17'] # result subfolder to be considered in the MotionClouds analysis process
+mc_analysis_folders = ['B008ks_a17'] # result subfolder to be considered in the MotionClouds analysis process
+
+do_idcard = True
+idcard_folders = ['B008ks_a17']
 
 # --------------------------------------------------------------
 # Waveform analysis parameters
@@ -73,12 +77,12 @@ beg_index = 30 # int(len(signal)/beg_index), index at which to end the signal be
 end_index = 29 # end_index * int(len(signal)/beg_index), index at which to start the signal end visualisation
 flash_height_percentile = 99 # np.percentile(signal, 99) height of photodiode blinks
 baseline_height_percentile = 50 # height of the average signal, to distinguish start and end
-width = 200 #units
+width = 280 #units, if there is too much sequences compared to theoritical results, increase this param
 
 # --------------------------------------------------------------
 # Sequence generation
 # --------------------------------------------------------------
-seq_type = 'tc_fix_mc' 
+seq_type = 'long_fix_mc' 
 
 if seq_type == 'long_fix_mc' :
     N_thetas = 12 # np.linspace(min_theta, max_theta, N_thetas)
@@ -114,8 +118,8 @@ elif seq_type == 'tc_fix_mc' :
 # PSTH
 # --------------------------------------------------------------
 beg_psth = -0.5 #s
-end_psth = 1.5 #s
-binsize = 5 #ms
+end_psth = .5 #s
+binsize = 20 #ms
 
 # --------------------------------------------------------------
 # FR DYNAMICS

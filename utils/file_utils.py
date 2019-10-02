@@ -16,10 +16,12 @@ import numpy as np
 import h5py
 import os
 import sys
+from tqdm import tqdm
 
 def kwd_to_file(kwik_path, experiment_name, pipeline_name,
                channel_map, photodiode_index,
                output_type = 'bin', iterator = 0,
+               do_ch_map = True, do_photodiode = True,
                verbose = True):
     '''
     Directly converts a kwik file (.raw.kwd extension) to a file for the pipeline,
@@ -48,13 +50,36 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
     channels = dataset['channel_bit_volts']['0']
     timestamps = dataset['timestamps']['0']
     
-    data2 = np.asarray(data)[: , channel_map]
     photodiode_data = data[:, photodiode_index]
+    
+    
+    for chan in tqdm(channel_map) : 
+        chan_data = data[: , chan]
 
+        np.save('./pipelines/%s/%s.npy' % (pipeline_name, chan), chan_data)  
+        
     del data
+    os.remove(kwik_path)
     
-    if verbose : print('Done ! Found %.3f seconds of recording. '% (timestamps.max() -timestamps.min()))
+    if verbose : print('Concatenating channels into a single array ...')
+    data2 = np.load('./pipelines/%s/%s.npy' % (pipeline_name, channel_map[0]))
+    for chan in tqdm(channel_map[1:]):
+        chan_data = np.load('./pipelines/%s/%s.npy' % (pipeline_name, chan))
+        data2 = np.vstack((data2, chan_data))
+    data2 = data2.swapaxes(0,1)
+        
+
+    if verbose : print('Done ! Found %.3f seconds of recording in array of shape %s. '% (timestamps.max() -timestamps.min(), data2.shape))
+
+    # Removes the temporary npy array
+    mainpath = './pipelines/%s/' % pipeline_name   
+    main_files = [file for file in os.listdir(mainpath) if os.path.isfile(os.path.join(mainpath, file))]
+    for main_file in main_files :
+        if '.npy' in main_file :
+            os.remove(mainpath + main_file)
+            
     
+            
     # -------------------------------------------------------------------------
     # BIN CONVERSION
     # -------------------------------------------------------------------------
@@ -64,26 +89,16 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
         photodiode_data.tofile('./pipelines/%s/bins/phtdiode_%s.bin' % (pipeline_name,iterator))
         timestamps.tofile('./pipelines/%s/bins/timestamps_%s.bin' % (pipeline_name,iterator))
     
-        if verbose : print('Done ! Running sanity check for input and saved file identity ...')
-        test = np.fromfile('./pipelines/%s/mydata_%s.bin' % (pipeline_name,iterator), dtype = 'int16')
-        if np.array_equal(data2, test.reshape((-1, channel_map.shape[0]))) :
-            del data2
-            del test
-            
-            if verbose : print('Sanity check passed.')
-            print('Conversion from raw.kwd to int16 binary file successfully completed !\n')
-            
-            with open('./pipelines/%s/debugfile.txt' %pipeline_name, 'a') as file:
-                file.write('|-| File %s |-| \n' % iterator)
-                file.write('| nbr_channels = %s | \n'%channels.shape[0])
-                file.write('| timestamps_min = %s | \n' % timestamps.min())
-                file.write('| timestamps_max = %s | \n' % timestamps.max())
-    
-        else :
-            print('Channel map shape and output shape are not matching. Unclog the pipeline in utils.py')
-            sys.exit()
-    
-            
+        del data2
+
+        print('Conversion from raw.kwd to int16 binary file successfully completed !\n')
+        
+        with open('./pipelines/%s/debugfile.txt' %pipeline_name, 'a') as file:
+            file.write('|-| File %s |-| \n' % iterator)
+            file.write('| nbr_channels = %s | \n'%channels.shape[0])
+            file.write('| timestamps_min = %s | \n' % timestamps.min())
+            file.write('| timestamps_max = %s | \n' % timestamps.max())
+                
     # -------------------------------------------------------------------------
     # NPY CONVERSION
     # -------------------------------------------------------------------------
@@ -93,24 +108,17 @@ def kwd_to_file(kwik_path, experiment_name, pipeline_name,
         np.save('./pipelines/%s/%s_phtdiode.npy' % (pipeline_name, experiment_name), photodiode_data)
         np.save('./pipelines/%s/%s_timestamps.npy' % (pipeline_name, experiment_name), timestamps)
 
-        if verbose : print('Done ! Running sanity check for input and saved file identity ...')
-        test = np.load('./pipelines/%s/%s.npy' % (pipeline_name, experiment_name))
-        if np.array_equal(data2, test) : #no reshape needed, np.save and .load keep the structure
-            del data2
-            del test
-            
-            if verbose : print('Sanity check passed.')
-            print('Conversion from raw.kwd to npy file successfully completed !\n')
-        
-            with open('./pipelines/%s/debugfile.txt' %pipeline_name, 'a') as file:
-                file.write('|-| File %s |-| \n' % iterator)
-                file.write('| nbr_channels = %s | \n'%channels.shape[0])
-                file.write('| timestamps_min = %s | \n' % timestamps.min())
-                file.write('| timestamps_max = %s | \n' % timestamps.max())
+        del data2
+
+        if verbose : print('Sanity check passed.')
+        print('Conversion from raw.kwd to npy file successfully completed !\n')
     
-        else :
-            print('Channel map shape and output shape are not matching. Unclog the pipeline in utils.py')
-            sys.exit()
+        with open('./pipelines/%s/debugfile.txt' %pipeline_name, 'a') as file:
+            file.write('|-| File %s |-| \n' % iterator)
+            file.write('| nbr_channels = %s | \n'%channels.shape[0])
+            file.write('| timestamps_min = %s | \n' % timestamps.min())
+            file.write('| timestamps_max = %s | \n' % timestamps.max())
+
         
     else :
         print('Output format not implemented.')

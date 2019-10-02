@@ -7,7 +7,7 @@ Created on Tue Aug 20 14:44:11 2019
 """
 
 import pipeline_params as prm
-from analysis import waveform, photodiode, mc
+from analysis import waveform, photodiode, mc, plotter
 
 
 
@@ -43,3 +43,10 @@ if prm.do_mc :
                    fs = prm.fs, beg_psth = prm.beg_psth, end_psth = prm.end_psth, binsize = prm.binsize,
                    win_size = prm.win_size, step_size = prm.step_size,
                    verbose = prm.verbose)
+    
+if prm.do_idcard : 
+    plotter.create_ID_card(folder_list = prm.idcard_folders,
+                           step_size = prm.step_size, win_size = prm.win_size,
+                           beg_PST = prm.beg_psth, end_PST = prm.end_psth,
+                           fs = prm.fs, binsize = prm.binsize,
+                           verbose = prm.verbose)

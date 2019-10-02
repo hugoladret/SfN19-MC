@@ -75,7 +75,7 @@ def mc_analysis(folder_list,
 # 
 # --------------------------------------------------------------
         
-def ori_selec(folder, merged, fs,
+def ori_maxFR_selec(folder, merged, fs,
               verbose) :
     '''
     Runs orientation selectivity analysis on each cluster subfolder in the folder
@@ -87,7 +87,7 @@ def ori_selec(folder, merged, fs,
     clusters_folders = [file for file in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, file))]
     
     for cluster_folder in clusters_folders :
-        if verbose : print('Analysing ./results/%s/%s' % (folder, cluster_folder))
+        if verbose : print('analyzing ./results/%s/%s' % (folder, cluster_folder))
         
         sequences_contents = np.load(folder_path + cluster_folder + '/sequences_contents.npy',
                                      allow_pickle = True)
@@ -96,10 +96,14 @@ def ori_selec(folder, merged, fs,
         unique_thetas = np.unique([x['sequence_theta'] for x in sorted_arr_theta])
         unique_bthetas = np.unique([x['sequence_btheta'] for x in sorted_arr_theta])
         
+        spiketimes = np.load(folder_path + cluster_folder + '/spiketimes.npy')
+        
         #for further plot purposes
         np.save(folder_path + cluster_folder + '/unique_thetas.npy', unique_thetas)
         np.save(folder_path + cluster_folder + '/unique_bthetas.npy', unique_bthetas)
         
+        before = -.5 * fs
+        after = .5 * fs
         #---------
         # Merged
         #---------
@@ -112,8 +116,10 @@ def ori_selec(folder, merged, fs,
                 spikes_per_theta = []
                 for seq in sorted_arr_theta :
                     if seq['sequence_theta'] == u_theta :
-                        seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
-                        spikes_per_theta.append(seq['tot_spikes']/seq_duration)
+                        idx_FR_before = np.where((spiketimes > seq['sequence_beg'] + before) & (spiketimes < seq['sequence_beg']))
+                        idx_FR_after = np.where((spiketimes > seq['sequence_beg']) & (spiketimes < seq['sequence_beg'] + after ))
+                        
+                        spikes_per_theta.append( (spiketimes[near_sequence_beg]/fs) - (seq['sequence_beg']/fs))
                         
                 TC_list.append(spikes_per_theta)
                 
@@ -141,8 +147,108 @@ def ori_selec(folder, merged, fs,
                     spikes_per_thetabtheta = []
                     for seq in sorted_arr_theta :
                         if seq['sequence_theta'] == u_theta and seq['sequence_btheta'] == u_btheta:
-                            seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
-                            spikes_per_thetabtheta.append(seq['tot_spikes']/seq_duration)
+#                            seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
+#                            spikes_per_thetabtheta.append(seq['tot_spikes']/seq_duration)
+                            sampled_length = 15000 # = .5s @ 30kHz
+                            seq_duration = ( (seq['sequence_beg'] + sampled_length) - seq['sequence_beg']) / fs
+                            spikes_per_thetabtheta.append(len(seq['spiketimes'][np.where(seq['spiketimes'] < seq['sequence_beg'] + sampled_length)[0]])/seq_duration)
+                    TC_list_theta.append(spikes_per_thetabtheta)
+                TC_list_btheta.append(TC_list_theta)
+                
+            all_means, all_stds = [], []
+            for i in range(len(TC_list_btheta)):
+                means = np.mean(TC_list_btheta[i], axis = 1)
+                stds = np.std(TC_list_btheta[i], axis = 1)
+                
+                all_means.append(means)
+                all_stds.append(stds)
+
+            #saves a (b_theta, thetas) shaped arrays
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_means.npy', all_means)
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_stds.npy', all_stds)
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_all.npy', TC_list_btheta)
+        
+    print('Done !')
+    
+# --------------------------------------------------------------
+# 
+# --------------------------------------------------------------
+        
+def ori_selec(folder, merged, fs,
+              verbose) :
+    '''
+    Runs orientation selectivity analysis on each cluster subfolder in the folder
+    saves directly as arrays for merged and non merged tuning curves of the cluster
+    '''
+    print('# Analyzing orientation selectivity #')
+    folder_path = './results/%s/' % folder
+    
+    clusters_folders = [file for file in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, file))]
+    
+    for cluster_folder in clusters_folders :
+        if verbose : print('analyzing ./results/%s/%s' % (folder, cluster_folder))
+        
+        sequences_contents = np.load(folder_path + cluster_folder + '/sequences_contents.npy',
+                                     allow_pickle = True)
+        sorted_arr_theta = sorted(sequences_contents, key = lambda x:x['sequence_theta'])
+        
+        unique_thetas = np.unique([x['sequence_theta'] for x in sorted_arr_theta])
+        unique_bthetas = np.unique([x['sequence_btheta'] for x in sorted_arr_theta])
+        
+        #for further plot purposes
+        np.save(folder_path + cluster_folder + '/unique_thetas.npy', unique_thetas)
+        np.save(folder_path + cluster_folder + '/unique_bthetas.npy', unique_bthetas)
+        
+        #---------
+        # Merged
+        #---------
+        if merged : 
+        # Iterates through all possible thetas
+            TC_list = []
+            for u_theta in unique_thetas :
+                
+                # And through sequences to find them
+                spikes_per_theta = []
+                for seq in sorted_arr_theta :
+                    if seq['sequence_theta'] == u_theta :
+#                        seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
+#                        spikes_per_theta.append(seq['tot_spikes']/seq_duration)
+                        # retour de LoloFredo : réduire TC à l'intervalle 0-500 ms pst
+                        sampled_length = 15000 # = .5s @ 30kHz
+                        seq_duration = ( (seq['sequence_beg'] + sampled_length) - seq['sequence_beg']) / fs
+                        spikes_per_theta.append(len(seq['spiketimes'][np.where(seq['spiketimes'] < seq['sequence_beg'] + sampled_length)[0]])/seq_duration)
+                        
+                TC_list.append(spikes_per_theta)
+                
+            means, stds = [], []
+            for theta in TC_list : 
+                means.append(np.mean(theta))
+                stds.append(np.std(theta))
+                
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_merged_means.npy', means)
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_merged_stds.npy', stds)
+            np.save(folder_path + cluster_folder + '/plot_MC_TC_merged_all.npy', TC_list)
+                
+                
+        #-----------
+        # Not merged
+        #-----------
+        else :
+            TC_list_btheta = []
+            for u_btheta in unique_bthetas :
+                
+                # And all the thetas
+                TC_list_theta =[] 
+                for u_theta in unique_thetas :
+                    
+                    spikes_per_thetabtheta = []
+                    for seq in sorted_arr_theta :
+                        if seq['sequence_theta'] == u_theta and seq['sequence_btheta'] == u_btheta:
+#                            seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
+#                            spikes_per_thetabtheta.append(seq['tot_spikes']/seq_duration)
+                            sampled_length = 15000 # = .5s @ 30kHz
+                            seq_duration = ( (seq['sequence_beg'] + sampled_length) - seq['sequence_beg']) / fs
+                            spikes_per_thetabtheta.append(len(seq['spiketimes'][np.where(seq['spiketimes'] < seq['sequence_beg'] + sampled_length)[0]])/seq_duration)
                     TC_list_theta.append(spikes_per_thetabtheta)
                 TC_list_btheta.append(TC_list_theta)
                 
@@ -179,7 +285,7 @@ def psth(folder, merged,fs, beg_psth, end_psth, binsize, verbose) :
     n_bin /= binsize
     
     for cluster_folder in clusters_folders :
-        if verbose : print('Analysing ./results/%s/%s' % (folder, cluster_folder))
+        if verbose : print('analyzing ./results/%s/%s' % (folder, cluster_folder))
         
         sequences_contents = np.load(folder_path + cluster_folder + '/sequences_contents.npy',
                                      allow_pickle = True)
@@ -256,7 +362,7 @@ def fr_dynamics(folder, merged, fs,
         unique_bthetas = np.unique([x['sequence_btheta'] for x in sorted_arr_theta])
         
         n_spikes_list = []
-        for beg in tqdm( np.arange(0, max(spiketimes), step_size), 'Smoothing %s densities' % (cluster_folder)) :
+        for beg in tqdm( np.arange(0, max(spiketimes), step_size), 'Doing %s densities' % (cluster_folder)) :
             end = beg + win_size
             spikes_in_window = np.where((spiketimes > beg) & (spiketimes < end))[0]
             n_spikes_list.append(len(spikes_in_window))
@@ -273,7 +379,7 @@ def fr_dynamics(folder, merged, fs,
                 spikes_per_theta = []
                 for seq in sorted_arr_theta :
                     if seq['sequence_theta'] == u_theta :
-                        print(seq['sequence_beg'])
+
                         seq_beg = seq['sequence_beg'] / fs
                         seq_end = seq_beg + end_PST
                         seq_beg += beg_PST
@@ -282,10 +388,7 @@ def fr_dynamics(folder, merged, fs,
                         ind_end = int(seq_end / step_size)
                         
                         spikes_per_theta.append(n_spikes_list[ind_beg : ind_end])
-                        print(seq_beg, seq_end)
-                        print(ind_beg, ind_end)
-                        print(n_spikes_list[ind_beg : ind_end])
-                        print('\n')
+
                         
             
                 PSTH_list.append(spikes_per_theta)
@@ -338,12 +441,13 @@ def neurometric(folder, verbose) :
     clusters_folders = [file for file in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, file))]
     
     for cluster_folder in clusters_folders :
-        if verbose : print('Analysing ./results/%s/%s' % (folder, cluster_folder))
+        if verbose : print('analyzing ./results/%s/%s' % (folder, cluster_folder))
         
         TC_data = np.load(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_all.npy')
 
         B_theta_fit_list = []
         tuning_fits_list = []
+        fit_reports_list = []
         for it_0, btheta in enumerate(TC_data) :
             # Make a tuning curve
             mean_fr = np.mean(btheta, axis = 1)
@@ -355,9 +459,11 @@ def neurometric(folder, verbose) :
             tuning_fits_list.append(tuning_function(x=xs,
                                 j=best_vals['j'], fmax=best_vals['fmax'],
                                 B=best_vals['B']) + mean_fr.min())
+            fit_reports_list.append(fit_report)
             
             np.save(folder_path + cluster_folder + '/plot_neurometric_Btheta_fits.npy', B_theta_fit_list)
             np.save(folder_path + cluster_folder + '/plot_neurometric_fitted_TC.npy', tuning_fits_list)
+            np.save(folder_path + cluster_folder + '/plot_neurometric_fit_reports.npy', fit_reports_list)
             
     print(' Done ! ')
            

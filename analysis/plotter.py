@@ -23,7 +23,7 @@ def create_ID_card(folder_list,
     Creates a full report on the cluster, merging multiple matplotlib fig saved as _tmp
     '''
     for folder in folder_list : 
-        folder_path = '../results/%s/' % folder
+        folder_path = './results/%s/' % folder
         clusters_folders = [file for file in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, file))]
         
         for cluster_folder in clusters_folders :
@@ -177,7 +177,11 @@ def make_pg2(cluster_folder, step_size, win_size,
     colors = plt.cm.viridis(np.linspace(0, .8, len(PSTH_FR_list)))
     
     fig, ax  = plt.subplots(len(PSTH_FR_list), 2, sharex = 'col', figsize = (12, 9))
-
+    
+    means = [np.mean(theta, axis = 0) for theta in PSTH_FR_list]
+    min_mean = np.min(means)
+    max_mean = np.max(means)
+    
     for it_0, theta in enumerate(PSTH_FR_list):
         for trial in theta :
             ax[it_0][0].plot(np.linspace(beg_PST, end_PST, len(trial)),
@@ -189,6 +193,10 @@ def make_pg2(cluster_folder, step_size, win_size,
         
         plt.text(0.02, ys[it_0], r'$\theta$' + '=%.1f°' % unique_thetas[it_0], fontsize = 9, transform = plt.gcf().transFigure, 
                  c = colors[it_0])
+        
+        ax[it_0][0].set_ylim(0, np.max(theta))
+        ax[it_0][1].set_ylim(min_mean,
+                             max_mean)
         
         if it_0 == len(PSTH_FR_list) - 1 :
             ax[it_0][0].set_xlabel('PST (s)')
@@ -228,7 +236,11 @@ def make_pg3(cluster_folder, step_size, win_size,
     colors = plt.cm.viridis(np.linspace(0, .8, len(PSTH_list)))
     
     fig, ax = plt.subplots(len(PSTH_list), 2, sharex = 'col', figsize = (12, 9))
-
+    
+    hists = [np.histogram(np.concatenate(theta), int(n_bin))[0] for theta in PSTH_list]
+    min_hist = np.min(hists)
+    max_hist = np.max(hists)
+    
     for it_0, theta in enumerate(PSTH_list) : 
         for it_1, trial in enumerate(theta) :
             ax[it_0][0].scatter(trial, np.full_like(trial, it_1), s =  .3,
@@ -242,6 +254,7 @@ def make_pg3(cluster_folder, step_size, win_size,
         
         ax[it_0][0].set_xlim(beg_PST, end_PST)
         ax[it_0][1].set_xlim(beg_PST, end_PST)
+        ax[it_0][1].set_ylim(min_hist, max_hist)
         
         if it_0 == len(PSTH_list)-1 :
                 ax[it_0][0].set_xlabel('PST (s)')
@@ -282,6 +295,10 @@ def make_pg4to19(cluster_folder,
         ys = np.linspace(.85, .13, len(PSTH_FR_list))
         colors = plt.cm.viridis(np.linspace(0, .8, len(PSTH_FR_list)))
         
+        means = [np.mean(theta, axis = 0) for theta in PSTH_FR_list]
+        min_mean = np.min(means)
+        max_mean = np.max(means)
+    
         fig, ax  = plt.subplots(len(PSTH_FR_list), 2, sharex = 'col', figsize = (12, 9))
     
         for it_0, theta in enumerate(PSTH_FR_list):
@@ -295,6 +312,9 @@ def make_pg4to19(cluster_folder,
             
             plt.text(0.02, ys[it_0], r'$\theta$' + '=%.1f°' % unique_thetas[it_0], fontsize = 9, transform = plt.gcf().transFigure, 
                      c = colors[it_0])
+            ax[it_0][0].set_ylim(0, np.max(theta))
+            ax[it_0][1].set_ylim(min_mean,
+                             max_mean)
             
             if it_0 == len(PSTH_FR_list) - 1 :
                 ax[it_0][0].set_xlabel('PST (s)')
@@ -325,6 +345,10 @@ def make_pg4to19(cluster_folder,
         n_bin = (end_PST) - (beg_PST) 
         n_bin*=1000
         n_bin/= binsize
+        
+        hists = [np.histogram(np.concatenate(theta), int(n_bin))[0] for theta in PSTH_list]
+        min_hist = np.min(hists)
+        max_hist = np.max(hists)
      
         ys = np.linspace(.85, .13, len(PSTH_list))
         colors = plt.cm.viridis(np.linspace(0, .8, len(PSTH_list)))
@@ -344,6 +368,7 @@ def make_pg4to19(cluster_folder,
             
             ax[it_0][0].set_xlim(beg_PST, end_PST)
             ax[it_0][1].set_xlim(beg_PST, end_PST)
+            ax[it_0][1].set_ylim(min_hist, max_hist)
             
             if it_0 == len(PSTH_list)-1 :
                     ax[it_0][0].set_xlabel('PST (s)')
@@ -368,11 +393,9 @@ def make_pg20(cluster_folder):
     as the neurometric curve
     '''
 
-    full_FR = np.load(cluster_folder + '/plot_MC_FR_all.npy')
     
     unique_thetas = np.load(cluster_folder + '/unique_thetas.npy') *  360 / np.pi
     unique_thetas = np.round(unique_thetas, 1)
-    
     
     unique_bthetas = np.load(cluster_folder + '/unique_bthetas.npy') *  360 / np.pi
         
@@ -399,10 +422,11 @@ def make_pg20(cluster_folder):
     # Merged TC plot
     mean_FR_per_theta = np.load(cluster_folder + '/plot_MC_TC_merged_means.npy')
     stds_FR_per_theta = np.load(cluster_folder + '/plot_MC_TC_merged_stds.npy')
+    r_squared = np.load(cluster_folder + '/plot_neurometric_fit_reports.npy')
     
     axs1.plot(unique_thetas, mean_FR_per_theta)
-    axs1.errorbar(unique_thetas, mean_FR_per_theta, stds_FR_per_theta, fmt = 'none',
-                  capsize = 2,c = 'gray')
+#    axs1.errorbar(unique_thetas, mean_FR_per_theta, stds_FR_per_theta, fmt = 'none',
+#                  capsize = 2,c = 'gray')
     axs1.set_xlabel(r'$\theta$' + '°')
     axs1.set_ylabel('FR (sp/s)')
     axs1.set_title('Tuning curve, averaged over all ' + r'$B_\theta$', fontsize = 10)
@@ -424,17 +448,21 @@ def make_pg20(cluster_folder):
     ys = np.linspace(.62, .25, 4)
     for i, ax in enumerate(TC_nonmerged_axs) :
         ax.plot(unique_thetas, mean_FR_per_btheta[i], '.k')
-        ax.errorbar(unique_thetas, mean_FR_per_btheta[i], stds_FR_per_btheta[i], fmt = 'none',
-                  capsize = 2,c = 'gray')
+#        ax.errorbar(unique_thetas, mean_FR_per_btheta[i], stds_FR_per_btheta[i], fmt = 'none',
+#                  capsize = 2,c = 'gray')
         ax.plot(unique_thetas, fitted_TC[i])
         
         if i == 0 or i == 4:
             ax.set_title('Tuning curve for one '+r'$B_\theta$', fontsize = 10)
         
         if i <= 3 : 
-            plt.text(0.38, ys[i], r'$B_\theta$' + '=%.1f°' % unique_bthetas[i], fontsize = 10, transform = plt.gcf().transFigure)
+            plt.text(0.38, ys[i], r'$B_\theta$ stim' + '=%.1f°' % unique_bthetas[i], fontsize = 10, transform = plt.gcf().transFigure)
+            plt.text(0.38, ys[i]-.025, r'$B_\theta$ fit' + '=%.1f°' % bthetas_fit[i], fontsize = 10, transform = plt.gcf().transFigure)
+            plt.text(0.38, ys[i]-.035, 'r² = %.2f' % r_squared[i], fontsize = 10, transform = plt.gcf().transFigure)
         else : 
-            plt.text(0.78, ys[i-4], r'$B_\theta$' + '=%.1f°' % unique_bthetas[i], fontsize = 10, transform = plt.gcf().transFigure)
+            plt.text(0.78, ys[i-4], r'$B_\theta$ stim' + '=%.1f°' % unique_bthetas[i], fontsize = 10, transform = plt.gcf().transFigure)
+            plt.text(0.78, ys[i-4]-.025, r'$B_\theta$ fit' + '=%.1f°' % bthetas_fit[i], fontsize = 10, transform = plt.gcf().transFigure)
+            plt.text(0.78, ys[i-4]-.035, 'r² = %.2f' % r_squared[i], fontsize = 10, transform = plt.gcf().transFigure)
             
         if i == 3 or i == 7 :
             ax.set_xlabel(r'$\theta$' + '°')
@@ -459,8 +487,8 @@ def get_var_from_file(filename):
     return cluster_info
 
 
-create_ID_card(['A005_a17'], verbose = True, 
-               step_size = .002, win_size = .2,
-                   beg_PST = -.5, end_PST = 1.5,
-                   fs = 30000.0, binsize = 5)
+#create_ID_card(['A005_a17'], verbose = True, 
+#               step_size = .002, win_size = .2,
+#                   beg_PST = -.5, end_PST = 1.5,
+#                   fs = 30000.0, binsize = 5)
     

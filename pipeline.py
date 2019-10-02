@@ -31,58 +31,58 @@ if file_utils.variable_from_debugfile('SPIKE_SORTED', prm.pipeline_name) != 'Tru
     # supports data stream, so no merge is needed, thanks Pierre
     # -------------------------------------------------------------------------
     # Extracting data from raw.kwd
-    if prm.spike_sorter == 'Spyking-Circus' :
-        for i, kwd_file in enumerate(prm.kwd_path) :
-            print('# File %s / %s #' % (i+1, len(prm.kwd_path)))
-            file_utils.kwd_to_file(prm.kwd_path[i], prm.experiment_name[i], prm.pipeline_name,
-                                  prm.channel_map, prm.photodiode_index, 'bin', i,
-                                  verbose = prm.verbose)
-        
-        # Copying template files and calling spyking-circus
-        spykingcircus_utils.copy_file(prm.params_file, prm.pipeline_name, 'mydata_0.params')
-        spykingcircus_utils.copy_file(prm.prb_file, prm.pipeline_name, 'map.prb')
-        
-        spykingcircus_utils.call_circus(filename = 'mydata_0.bin',
-                                        n_cpu = prm.n_cpu,
-                                        hostfile = None, 
-                                        preview = prm.show_preview,
-                                        result = prm.show_results,
-                                        pipeline_name = prm.pipeline_name,
-                                        )
-        
-        
-            
-    # -------------------------------------------------------------------------
-    # KILOSORT 
-    # doesn't support data stream, so a merge is needed
-    # -------------------------------------------------------------------------        
-    elif prm.spike_sorter == 'Kilosort' :
-        if len(prm.kwd_path) > 1 :
-            for i, kwd_file in enumerate(prm.kwd_path) :
-                print('# File %s / %s #' % (i+1, len(prm.kwd_path)))
-                file_utils.kwd_to_file(prm.kwd_path[i], prm.experiment_name[i], prm.pipeline_name,
-                                      prm.channel_map, prm.photodiode_index,
-                                      'npy',
-                                      verbose = prm.verbose)
-            
-            file_utils.concatenate2D_from_disk(arrays_paths = [arr_name+'.npy' for arr_name in prm.experiment_name],
-                                               pipeline_name = prm.pipeline_name,
-                                               verbose = prm.verbose)
-            file_utils.concatenate1D_from_disk(arrays_paths = [arr_name+'_phtdiode.npy' for arr_name in prm.experiment_name],
-                                               pipeline_name = prm.pipeline_name,
-                                               output_name = 'phtdiode')
-            file_utils.concatenate1D_from_disk(arrays_paths = [arr_name+'_timestamps.npy' for arr_name in prm.experiment_name],
-                                               pipeline_name = prm.pipeline_name,
-                                               output_name = 'timestamps')
-        else :
-            print('# File 1 / 1 #' % (i+1, len(prm.kwd_path)))
-            file_utils.kwd_to_file(prm.kwd_path[i], prm.experiment_name[i], prm.pipeline_name,
-                                  prm.channel_map, prm.photodiode_index,
-                                  'bin',
-                                  verbose = prm.verbose)
-            
-    else :
-        print('Spike Sorter not supported')
+#    if prm.spike_sorter == 'Spyking-Circus' :
+#        for i, kwd_file in enumerate(prm.kwd_path) :
+#            print('# File %s / %s #' % (i+1, len(prm.kwd_path)))
+#            file_utils.kwd_to_file(prm.kwd_path[i], prm.experiment_name[i], prm.pipeline_name,
+#                                  prm.channel_map, prm.photodiode_index, 'bin', i,
+#                                  verbose = prm.verbose)
+#        
+#        # Copying template files and calling spyking-circus
+#        spykingcircus_utils.copy_file(prm.params_file, prm.pipeline_name, 'mydata_0.params')
+#        spykingcircus_utils.copy_file(prm.prb_file, prm.pipeline_name, 'map.prb')
+#        
+#        spykingcircus_utils.call_circus(filename = 'mydata_0.bin',
+#                                        n_cpu = prm.n_cpu,
+#                                        hostfile = None, 
+#                                        preview = prm.show_preview,
+#                                        result = prm.show_results,
+#                                        pipeline_name = prm.pipeline_name,
+#                                        )
+#        
+#        
+#            
+#    # -------------------------------------------------------------------------
+#    # KILOSORT 
+#    # doesn't support data stream, so a merge is needed
+#    # -------------------------------------------------------------------------        
+#    elif prm.spike_sorter == 'Kilosort' :
+#        if len(prm.kwd_path) > 1 :
+#            for i, kwd_file in enumerate(prm.kwd_path) :
+#                print('# File %s / %s #' % (i+1, len(prm.kwd_path)))
+#                file_utils.kwd_to_file(prm.kwd_path[i], prm.experiment_name[i], prm.pipeline_name,
+#                                      prm.channel_map, prm.photodiode_index,
+#                                      'npy',
+#                                      verbose = prm.verbose)
+#            
+#            file_utils.concatenate2D_from_disk(arrays_paths = [arr_name+'.npy' for arr_name in prm.experiment_name],
+#                                               pipeline_name = prm.pipeline_name,
+#                                               verbose = prm.verbose)
+#            file_utils.concatenate1D_from_disk(arrays_paths = [arr_name+'_phtdiode.npy' for arr_name in prm.experiment_name],
+#                                               pipeline_name = prm.pipeline_name,
+#                                               output_name = 'phtdiode')
+#            file_utils.concatenate1D_from_disk(arrays_paths = [arr_name+'_timestamps.npy' for arr_name in prm.experiment_name],
+#                                               pipeline_name = prm.pipeline_name,
+#                                               output_name = 'timestamps')
+#        else :
+#            print('# File 1 / 1 #' % (i+1, len(prm.kwd_path)))
+#            file_utils.kwd_to_file(prm.kwd_path[i], prm.experiment_name[i], prm.pipeline_name,
+#                                  prm.channel_map, prm.photodiode_index,
+#                                  'bin',
+#                                  verbose = prm.verbose)
+#            
+#    else :
+#        print('Spike Sorter not supported')
     
     # Flags the Spike sorting as complete
     with open('./pipelines/%s/debugfile.txt' % prm.pipeline_name, 'a') as file:
