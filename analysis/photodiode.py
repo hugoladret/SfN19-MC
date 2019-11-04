@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 def export_sequences_times(folder_list, beg_index, end_index,
                            flash_height, baseline_height, width,
-                           fs, verbose) :
+                           fs, verbose, debug_plot) :
     '''
     Loops through the folders and export photodiode times
     '''
@@ -28,8 +28,8 @@ def export_sequences_times(folder_list, beg_index, end_index,
         
         sequences_times = get_peak_times(signal = signal, beg_index = beg, end_index = end,
                    flash_height = flash_height_level, baseline_height = baseline_height_level,
-                   width = width, folder = folder)
-        plot_sequences_length(sequences_times,fs, folder)
+                   width = width, folder = folder, debug_plot = debug_plot)
+        if debug_plot : plot_sequences_length(sequences_times,fs, folder)
         np.save('./results/%s/sequences_times.npy' % folder, sequences_times)
     print('Photodiode analysis done !\n')
  
@@ -58,7 +58,7 @@ def plot_sequences_length(sequences_times, fs, folder) :
        
 def get_peak_times(signal, beg_index, end_index,
                    flash_height, baseline_height, width,
-                   folder):
+                   folder, debug_plot):
     '''
     Plots the [0:beg_index] and [end_index:-1] signal of the photodiode
     with detected sequences
@@ -90,32 +90,34 @@ def get_peak_times(signal, beg_index, end_index,
             del_indices.append(i)
     
     sequences_times2 = [i for j,i in enumerate(sequences_times) if j not in del_indices]
+       
+    if debug_plot : 
+        fig, ax = plt.subplots(1, 2, sharex= 'col', sharey = 'row',
+                               figsize = (12,6))
+        fig.tight_layout()
         
-    fig, ax = plt.subplots(1, 2, sharex= 'col', sharey = 'row',
-                           figsize = (12,6))
-    fig.tight_layout()
     
-    ax[0].set_title('Beginning of the photodiode signal')
-    ax[0].set_ylabel('Absolute value of signal')
-    ax[0].set_xlabel(' Time (points)')
-    ax[0].plot(signal[0:beg_index], c = 'grey')
-    for i,sequence_time in enumerate(sequences_times2) :
-        if sequence_time[1] <= beg_index :
-            if i%2 == 0 : y = flash_height
-            else : y = flash_height-25
-            ax[0].plot((sequence_time[0], sequence_time[1]),
-                          (y, y), c = 'g')
-            
-    ax[1].set_title('End of the photodiode signal')
-    ax[1].plot(signal[end_index:-1], c = 'grey')
-    for i,sequence_time in enumerate(sequences_times2) :
-        if sequence_time[1] >= end_index :
-            if i%2 == 0 : y = flash_height
-            else : y = flash_height-25
-            ax[1].plot((sequence_time[0]-end_index, sequence_time[1]-end_index),
-                          (y, y), c = 'g')
-    plt.suptitle(folder)
-    fig.savefig('./results/%s/photodiode.pdf' % folder, format = 'pdf', bbox_inches = 'tight')
+        ax[0].set_title('Beginning of the photodiode signal')
+        ax[0].set_ylabel('Absolute value of signal')
+        ax[0].set_xlabel(' Time (points)')
+        ax[0].plot(signal[0:beg_index], c = 'grey')
+        for i,sequence_time in enumerate(sequences_times2) :
+            if sequence_time[1] <= beg_index :
+                if i%2 == 0 : y = flash_height
+                else : y = flash_height-25
+                ax[0].plot((sequence_time[0], sequence_time[1]),
+                              (y, y), c = 'g')
+                
+        ax[1].set_title('End of the photodiode signal')
+        ax[1].plot(signal[end_index:-1], c = 'grey')
+        for i,sequence_time in enumerate(sequences_times2) :
+            if sequence_time[1] >= end_index :
+                if i%2 == 0 : y = flash_height
+                else : y = flash_height-25
+                ax[1].plot((sequence_time[0]-end_index, sequence_time[1]-end_index),
+                              (y, y), c = 'g')
+        plt.suptitle(folder)
+        fig.savefig('./results/%s/photodiode.pdf' % folder, format = 'pdf', bbox_inches = 'tight')
     plt.show()
         
     return sequences_times2

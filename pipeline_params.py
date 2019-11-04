@@ -65,7 +65,7 @@ fs = 30000.0 # Hz
 
 n_spikes = 1000 # number of spikes to extract to get the mean waveform
 window_size = 30 # points/2 around the spiketime
-debug_plot = True #show the carac points and mean waveform
+debug_plot = False #show the carac points and mean waveform
 
 n_clusters = 2 # K-means number of cluster
 k_init = 'k-means++' # K-means init method, K++ uses the pca as barycenters
@@ -119,10 +119,10 @@ elif seq_type == 'tc_fix_mc' :
 # --------------------------------------------------------------
 beg_psth = -0.5 #s
 end_psth = .5 #s
-binsize = 20 #ms
+binsize = 50 #ms
 
 # --------------------------------------------------------------
 # FR DYNAMICS
 # --------------------------------------------------------------
-win_size = .2 #s
+win_size = .1 #s
 step_size = .002 #s

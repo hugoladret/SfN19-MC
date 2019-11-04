@@ -31,7 +31,7 @@ if prm.do_photodiode :
                                       flash_height = prm.flash_height_percentile,
                                       baseline_height = prm.baseline_height_percentile,
                                       width = prm.width, fs = prm.fs,
-                                      verbose = prm.verbose)
+                                      verbose = prm.verbose, debug_plot = prm.debug_plot)
     
 # Does the full package analysis for MotionClouds    
 if prm.do_mc : 

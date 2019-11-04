@@ -28,17 +28,17 @@ def create_ID_card(folder_list,
         
         for cluster_folder in clusters_folders :
             if verbose : print('Creating ID card for ./results/%s/%s ...' % (folder, cluster_folder))
-            pbar = tqdm(total = 20)
+            pbar = tqdm(total = 15)
             cluster_path = folder_path + cluster_folder
             
             make_pg1(folder = folder, cluster_folder = cluster_path, 
                      step_size = step_size)
             pbar.update(1)
             
-            make_pg2(cluster_folder = cluster_path,
+            '''make_pg2(cluster_folder = cluster_path,
                      step_size = step_size, win_size = win_size,
                      beg_PST = beg_PST, end_PST = end_PST)
-            pbar.update(1)
+            pbar.update(1)'''
             
             make_pg3(cluster_folder = cluster_path,
                      step_size = step_size, win_size = win_size,
@@ -46,17 +46,17 @@ def create_ID_card(folder_list,
                      fs = fs, binsize = binsize) 
             
             pbar.update(1)
-            #evens are FR
+            '''#evens are FR
             for i in np.arange(4, 20, 2) :
                 make_pg4to19(cluster_folder = cluster_path,
                              n = i, plot_type = 'FR', 
                              beg_PST = beg_PST, end_PST = end_PST,
                              win_size = win_size, step_size = step_size,
                              binsize = binsize)
-                pbar.update(1)
+                pbar.update(1)'''
                 
             #odds are PSTH
-            for i in np.arange(5, 21, 2) :
+            for i in np.arange(3, 11, 1) :
                 make_pg4to19(cluster_folder = cluster_path,
                              n = i, plot_type = 'PSTH',
                              beg_PST = beg_PST, end_PST = end_PST,
@@ -69,7 +69,7 @@ def create_ID_card(folder_list,
             
             pbar.close()
             
-            pdfs = [cluster_path + '/tmp%s.pdf' % x for x in np.arange(1,21)]
+            pdfs = [cluster_path + '/tmp%s.pdf' % x for x in np.arange(1,12)]
             merger = PdfFileMerger()
 
             for pdf in pdfs:
@@ -264,7 +264,7 @@ def make_pg3(cluster_folder, step_size, win_size,
         
     plt.suptitle('PSTH, All ' +  r'$B_\theta$' + ' stim. merged\n Histogram with %sms bin size' % binsize,  y = .95, fontsize = 15, )
     
-    fig.savefig(cluster_folder + '/tmp3.pdf', bbox_inches = 'tight')
+    fig.savefig(cluster_folder + '/tmp2.pdf', bbox_inches = 'tight')
     plt.close(fig)
   
 # --------------------------------------------------------------
@@ -335,7 +335,7 @@ def make_pg4to19(cluster_folder,
     # PSTH
     # ------------
     elif plot_type == 'PSTH' :
-        i = np.where(np.arange(5, 21, 2) == n)[0][0] #get b_theta nbr
+        i = np.where(np.arange(3, 11, 1) == n)[0][0] #get b_theta nbr
 
         PSTH_list = np.load(cluster_folder + '/plot_MC_PSTH_nonmerged.npy', allow_pickle = True)[i]
         
@@ -472,7 +472,7 @@ def make_pg20(cluster_folder):
             ax.set_xticks([])
             #ax.set_yticks([])
 
-    fig.savefig(cluster_folder + '/tmp20.pdf', bbox_inches = 'tight')
+    fig.savefig(cluster_folder + '/tmp11.pdf', bbox_inches = 'tight')
     plt.close(fig) # We don't want display
   
 # --------------------------------------------------------------
@@ -481,7 +481,7 @@ def make_pg20(cluster_folder):
     
 def get_var_from_file(filename):
     f = open(filename)
-    cluster_info = imp.load_source('cluster_info', '', f)
+    cluster_info = imp.load_source('cluster_info', filename)
     f.close()
     
     return cluster_info

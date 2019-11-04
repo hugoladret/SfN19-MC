@@ -58,14 +58,14 @@ def mc_analysis(folder_list,
              binsize = binsize,
              verbose = verbose)
 
-        fr_dynamics(folder = folder, merged = True, fs = fs,
+        '''fr_dynamics(folder = folder, merged = True, fs = fs,
                 beg_PST = beg_psth, end_PST = end_psth,
                 win_size = win_size, step_size = step_size,
                 verbose = verbose)
         fr_dynamics(folder = folder, merged = False, fs = fs,
                 beg_PST = beg_psth, end_PST = end_psth,
                 win_size = win_size, step_size = step_size,
-                verbose = verbose)
+                verbose = verbose)'''
 
         neurometric(folder = folder, verbose = verbose)
         
