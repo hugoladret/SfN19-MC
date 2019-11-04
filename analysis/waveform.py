@@ -294,7 +294,9 @@ def get_classif_points(mean_waveform) :
     
 def get_var_from_file(filename):
     f = open(filename)
-    cluster_info = imp.load_source('cluster_info', '', f)
+    print(f)
+    print(filename)
+    cluster_info = imp.load_source('cluster_info', filename, f)
     f.close()
     
     return cluster_info

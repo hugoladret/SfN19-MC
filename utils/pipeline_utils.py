@@ -124,9 +124,9 @@ def export_to_results(pipeline_name, verbose):
     resultpath = './results/'+pipeline_name
     
      # Spiketimes
-    spiketimes = np.load(path+'/sorted/spike_times.npy')
+    spiketimes = np.load(path+'/spike_times.npy')
     # Cluster ID per spiketimes
-    spiketimes_clusters_id = np.load(path+'/sorted/spike_clusters.npy')
+    spiketimes_clusters_id = np.load(path+'/spike_clusters.npy')
     
     # Spiketimes/clusters tuple table
     spike_cluster_table = []
@@ -135,12 +135,12 @@ def export_to_results(pipeline_name, verbose):
         
     # Good clusters as labelled by phy
     good_clusters = []
-    with open(path+'/sorted/cluster_info.tsv', 'r') as csvFile:
+    with open(path+'/cluster_info.tsv', 'r') as csvFile:
         reader = csv.reader(csvFile)
         for row in reader:
             row_values = row[0].split('\t')
-            cluster_id, channel, group = row_values[0], row_values[2], row_values[5]
-            depth, n_spikes = row_values[3], row_values[6]
+            cluster_id, channel, group = row_values[0], row_values[5], row_values[8]
+            depth, n_spikes = row_values[6], row_values[9]
             if group == 'good' :
                 good_clusters.append([int(cluster_id), int(channel), float(depth), int(n_spikes)])
                 
