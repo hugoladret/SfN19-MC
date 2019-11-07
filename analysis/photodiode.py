@@ -18,7 +18,7 @@ def export_sequences_times(folder_list, beg_index, end_index,
     print('# Extracting sequences times from photodiode #')
     for folder in folder_list :
         if verbose : print('Extracting from %s folder' % folder)
-        signal = np.fromfile('./pipelines/%s/phtdiode_0.bin' % folder, np.int16)
+        signal = np.fromfile('./pipelines/%s/photodiode.bin' % folder, np.int16)
         
         beg = int(len(signal)/beg_index)
         end = end_index * int(len(signal)/beg_index)

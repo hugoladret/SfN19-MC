@@ -35,9 +35,9 @@ def waveform_analysis(folder_list,
                           n_spikes, window_size, verbose)
     
     # show caracterisation of waveform and mean + std waveform
-    if debug_plot :
-        if verbose : print('Plotting waveforms')
-        plot_waveforms(folder_list)
+    #if debug_plot :
+        #if verbose : print('Plotting waveforms')
+        #plot_waveforms(folder_list)
     
     # perform the k-mean clustering
     if verbose : print('Running K-means')
@@ -63,7 +63,7 @@ def caracterise_waveforms(folder_list, n_chan,
     for folder in folder_list :
         
         folder_path = './results/%s/' % folder
-        raw_file_path = './pipelines/%s/mydata_0.bin' % folder
+        raw_file_path = './pipelines/%s/converted_data.bin' % folder
         
         if verbose : print('Loading data in %s' % raw_file_path )
         
@@ -129,15 +129,18 @@ def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
     first_class_triplets = []
     second_class_triplets = []
     
+    max_id = [i for i, tupl in enumerate(all_carac_points) if tupl[0]==np.max(all_carac_points, axis = 0)[0] and tupl[1]==np.max(all_carac_points, axis = 0)[1]][0]
+    label_max_id = kmeans.labels_[max_id] # the label of the neuron maximizing trough to peak and half width, meaning this label is excitatory
+
     for i in range(len(kmeans.labels_)) :
-        if kmeans.labels_[i] == 0 :
+        if kmeans.labels_[i] == label_max_id :
             first_class_triplets.append(all_carac_points[i])
             replace_if_exist(path_to_carac_points[i] + '/cluster_info.py',
-                             'putative_type', 'putative_type = "inh"\n')
+                             'putative_type', 'putative_type = "exc"\n')
         else :
             second_class_triplets.append(all_carac_points[i])
             replace_if_exist(path_to_carac_points[i] + '/cluster_info.py',
-                             'putative_type', 'putative_type = "exc"\n')
+                             'putative_type', 'putative_type = "inh"\n')
 
     xs1, ys1, zs1 = [], [], []
     for i in first_class_triplets :
@@ -168,9 +171,9 @@ def plot_KMeans(xs1, ys1, zs1,
     fig = plt.figure(figsize = (8,8))
     ax = fig.add_subplot(111, projection = '3d')
     
-    ax.scatter(xs2, ys2, zs2,
-                   c = 'r', label = 'Wide-spiking cells PC')
     ax.scatter(xs1, ys1, zs1,
+                   c = 'r', label = 'Wide-spiking cells PC')
+    ax.scatter(xs2, ys2, zs2,
                c = 'b', label = 'Narrow-spiking cells INs')
     
     ax.set_xlabel('Half width (points)')

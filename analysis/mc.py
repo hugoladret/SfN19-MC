@@ -20,7 +20,7 @@ def mc_analysis(folder_list,
                    N_Bthetas, min_btheta, max_btheta, rectification_btheta,
                    stim_duration, repetition, seed,
                    fs, beg_psth, end_psth, binsize,
-                   win_size, step_size,
+                   win_size, step_size, end_TC,
                    verbose) :
     '''
     Iterates through folders, linking spiketimes, stimulation info and timing together.
@@ -44,9 +44,9 @@ def mc_analysis(folder_list,
                        stim_duration, repetition, seed,
                        verbose)
         
-        ori_selec(folder = folder, merged = True, fs = fs,
+        ori_selec(folder = folder, merged = True, fs = fs, end_TC = end_TC,
                   verbose = verbose)
-        ori_selec(folder = folder, merged = False, fs = fs,
+        ori_selec(folder = folder, merged = False, fs = fs, end_TC = end_TC,
                   verbose = verbose)
 
         psth(folder = folder, merged = True, fs = fs, 
@@ -174,7 +174,7 @@ def ori_maxFR_selec(folder, merged, fs,
 # 
 # --------------------------------------------------------------
         
-def ori_selec(folder, merged, fs,
+def ori_selec(folder, merged, fs, end_TC,
               verbose) :
     '''
     Runs orientation selectivity analysis on each cluster subfolder in the folder
@@ -211,10 +211,10 @@ def ori_selec(folder, merged, fs,
                 spikes_per_theta = []
                 for seq in sorted_arr_theta :
                     if seq['sequence_theta'] == u_theta :
-#                        seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
-#                        spikes_per_theta.append(seq['tot_spikes']/seq_duration)
-                        # retour de LoloFredo : réduire TC à l'intervalle 0-500 ms pst
-                        sampled_length = 15000 # = .5s @ 30kHz
+                        #seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
+                        #spikes_per_theta.append(seq['tot_spikes']/seq_duration)
+                        
+                        sampled_length = int(end_TC*fs) # in hz
                         seq_duration = ( (seq['sequence_beg'] + sampled_length) - seq['sequence_beg']) / fs
                         spikes_per_theta.append(len(seq['spiketimes'][np.where(seq['spiketimes'] < seq['sequence_beg'] + sampled_length)[0]])/seq_duration)
                         
@@ -244,9 +244,9 @@ def ori_selec(folder, merged, fs,
                     spikes_per_thetabtheta = []
                     for seq in sorted_arr_theta :
                         if seq['sequence_theta'] == u_theta and seq['sequence_btheta'] == u_btheta:
-#                            seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
-#                            spikes_per_thetabtheta.append(seq['tot_spikes']/seq_duration)
-                            sampled_length = 15000 # = .5s @ 30kHz
+                            #seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
+                            #spikes_per_thetabtheta.append(seq['tot_spikes']/seq_duration)
+                            sampled_length = int(end_TC*fs) # in hz
                             seq_duration = ( (seq['sequence_beg'] + sampled_length) - seq['sequence_beg']) / fs
                             spikes_per_thetabtheta.append(len(seq['spiketimes'][np.where(seq['spiketimes'] < seq['sequence_beg'] + sampled_length)[0]])/seq_duration)
                     TC_list_theta.append(spikes_per_thetabtheta)
@@ -443,6 +443,7 @@ def neurometric(folder, verbose) :
     for cluster_folder in clusters_folders :
         if verbose : print('analyzing ./results/%s/%s' % (folder, cluster_folder))
         
+        #Individual TC fits
         TC_data = np.load(folder_path + cluster_folder + '/plot_MC_TC_nonmerged_all.npy')
 
         B_theta_fit_list = []
@@ -464,6 +465,26 @@ def neurometric(folder, verbose) :
             np.save(folder_path + cluster_folder + '/plot_neurometric_Btheta_fits.npy', B_theta_fit_list)
             np.save(folder_path + cluster_folder + '/plot_neurometric_fitted_TC.npy', tuning_fits_list)
             np.save(folder_path + cluster_folder + '/plot_neurometric_fit_reports.npy', fit_reports_list)
+
+        # Merged TC fit
+        merged_TC_data = np.load(folder_path + cluster_folder + '/plot_MC_TC_merged_all.npy')
+        B_theta_fit_list = []
+        tuning_fits_list = []
+        fit_reports_list = []
+        # Make a tuning curve
+        mean_fr = np.mean(merged_TC_data, axis = 1)
+        xs = np.arange(0, len(mean_fr))
+        
+        best_vals, fit_report = fit_plot(mean_fr)
+        B_theta_fit_list.append(best_vals['B'])
+        tuning_fits_list.append(tuning_function(x=xs,
+                            j=best_vals['j'], fmax=best_vals['fmax'],
+                            B=best_vals['B']) + mean_fr.min())
+        fit_reports_list.append(fit_report)
+        
+        np.save(folder_path + cluster_folder + '/plot_neurometric_merged_Btheta_fits.npy', B_theta_fit_list)
+        np.save(folder_path + cluster_folder + '/plot_neurometric_merged_fitted_TC.npy', tuning_fits_list)
+        np.save(folder_path + cluster_folder + '/plot_neurometric_merged_fit_reports.npy', fit_reports_list)
             
     print(' Done ! ')
            

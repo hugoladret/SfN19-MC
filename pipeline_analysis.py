@@ -41,12 +41,12 @@ if prm.do_mc :
                    rectification_btheta= prm.rectification_btheta,
                    stim_duration = prm.stim_duration, repetition = prm.repetition, seed = prm.seed,
                    fs = prm.fs, beg_psth = prm.beg_psth, end_psth = prm.end_psth, binsize = prm.binsize,
-                   win_size = prm.win_size, step_size = prm.step_size,
+                   win_size = prm.win_size, step_size = prm.step_size, end_TC = prm.end_TC,
                    verbose = prm.verbose)
     
 if prm.do_idcard : 
     plotter.create_ID_card(folder_list = prm.idcard_folders,
                            step_size = prm.step_size, win_size = prm.win_size,
                            beg_PST = prm.beg_psth, end_PST = prm.end_psth,
-                           fs = prm.fs, binsize = prm.binsize,
+                           fs = prm.fs, binsize = prm.binsize, end_TC = prm.end_TC,
                            verbose = prm.verbose)
