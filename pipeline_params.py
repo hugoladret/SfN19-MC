@@ -9,8 +9,8 @@ verbose = True
 # Pre-sorting parameters
 # --------------------------------------------------------------
 kwd_path = ['../rawdata/A005/experiment1_100.raw.kwd'] # path of the raw files, must be of same dimension as experiment_name
-pipeline_name = 'V7_a17_B008' # name of the folder created under /pipelines/
-experiment_name = ['V7_a17_B008'] # name of the temporary files for concatenation cases
+pipeline_name = 'B008' # name of the folder created under /pipelines/
+experiment_name = ['B008'] # name of the temporary files for concatenation cases
 
 channel_map = np.array([1, 17, 16, 32, 3, 19, 14, 30, 9, 25, 10, 20, 8, 24, 2, 29,
                         7, 26, 15, 21, 11, 23, 12, 28, 6, 18, 13, 22, 5, 27, 4, 31]) - 1  # channel map to extract from the raw file
@@ -42,16 +42,16 @@ export = True # moves the files to result folder
 # But not all of those neurons were recorded during MotionClouds or gratings sessions
 # --------------------------------------------------------------
 do_wav = True
-wav_analysis_folders = ['V7_a17_B008'] # result subfolder to be considered in the waveform analysis process
+wav_analysis_folders = ['B008'] # result subfolder to be considered in the waveform analysis process
 
 do_photodiode = True
-photodiode_folders = ['V7_a17_B008']
+photodiode_folders = ['B008']
 
 do_mc = True
-mc_analysis_folders = ['V7_a17_B008'] # result subfolder to be considered in the MotionClouds analysis process
+mc_analysis_folders = ['B008'] # result subfolder to be considered in the MotionClouds analysis process
 
 do_idcard = True
-idcard_folders = ['V7_a17_B008']
+idcard_folders = ['B008']
 
 # --------------------------------------------------------------
 # Waveform analysis parameters
