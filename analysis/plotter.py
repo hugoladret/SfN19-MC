@@ -106,14 +106,21 @@ def make_pg1(folder, cluster_folder, step_size, fs):
 
     spiketimes = np.load(cluster_folder + '/spiketimes.npy')
     #full_FR = np.load(cluster_folder + '/plot_MC_FR_all.npy')
+
+    unique_thetas = np.load(cluster_folder + '/unique_thetas.npy') *  180 / np.pi
+    unique_thetas = np.round(unique_thetas, 1)
+    unique_bthetas = np.load(cluster_folder + '/unique_bthetas.npy') *  180 / np.pi
+    fitted_TC = np.load(cluster_folder + '/plot_neurometric_fitted_TC.npy')
     
-    
+    colors = plt.cm.magma(np.linspace(.8, 0, len(fitted_TC)))
+
     fig = plt.figure(figsize = (12,9))
     fig.tight_layout()
     gs = gridspec.GridSpec(2,2)
     axs1 = plt.subplot(gs[0, 0])
     axs2 = plt.subplot(gs[0, 1])
-    axs3 = plt.subplot(gs[-1, :])
+    axs3 = plt.subplot(gs[-1, 0])
+    axs4 = plt.subplot(gs[-1, 1])
     
     # Waveform classification
     axs1.plot(unique_bthetas, r_squareds, c = 'k')
@@ -140,6 +147,14 @@ def make_pg1(folder, cluster_folder, step_size, fs):
     axs3.set_ylabel('Firing rate (spk/s)')
     axs3.set_xlabel('Time (s)')
     
+    for i, tc in enumerate(fitted_TC) : 
+        axs4.plot(unique_thetas, tc, color = colors[i], label = '%.1f' % unique_bthetas[i])
+    axs4.legend(title = r'$B_\theta$' + 'stim', loc = (1, .35))
+    axs4.set_title('TC for each precision level')
+    axs4.set_ylabel('n spikes')
+    axs4.set_xlabel('Angle °')
+
+
     plt.text(0.13, .95, 'Folder : %s' % cluster_folder, fontsize = 18, transform = plt.gcf().transFigure)
     
     plt.text(0.65, .95, 'Channel ID : %s' % cluster_info.channel_id, 
@@ -455,9 +470,6 @@ def make_pg20(cluster_folder, end_TC, fs):
     axs2.set_ylabel(r'$B_\theta$' + ' fit')
     axs2.set_title('TC opening for each ' + r'$B_\theta$' + ' stim', fontsize = 10)
     
-    
-    
-    
     ys = np.linspace(.62, .25, 4)
     for i, ax in enumerate(TC_nonmerged_axs) :
         ax.plot(unique_thetas, mean_FR_per_btheta[i], '.k')
@@ -480,7 +492,7 @@ def make_pg20(cluster_folder, end_TC, fs):
             
         if i == 3 or i == 7 :
             ax.set_xlabel(r'$\theta$' + '°')
-            ax.set_ylabel('FR (sp/s)')
+            ax.set_ylabel('n spikes')
             
         else :
             ax.set_xticks([])

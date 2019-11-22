@@ -129,7 +129,9 @@ def kmean_waveforms(folder_list, n_clusters, k_init, debug_plot):
     first_class_triplets = []
     second_class_triplets = []
     
-    max_id = [i for i, tupl in enumerate(all_carac_points) if tupl[0]==np.max(all_carac_points, axis = 0)[0] and tupl[1]==np.max(all_carac_points, axis = 0)[1]][0]
+    #max_id = [i for i, tupl in enumerate(all_carac_points) if tupl[0]==np.max(all_carac_points, axis = 0)[0] and tupl[1]==np.max(all_carac_points, axis = 0)[1]]
+    max_id = [i for i, tupl in enumerate(all_carac_points) if tupl[0]==np.max(all_carac_points, axis = 0)[0]][0]
+    print(max_id)
     label_max_id = kmeans.labels_[max_id] # the label of the neuron maximizing trough to peak and half width, meaning this label is excitatory
 
     for i in range(len(kmeans.labels_)) :
