@@ -80,9 +80,30 @@ width = 300 #units, if there is too much sequences compared to theoritical resul
 # --------------------------------------------------------------
 # Sequence generation
 # --------------------------------------------------------------
-seq_type = 'long_fix_mc' 
+seq_type = 'mix_mc_grat' 
 
-if seq_type == 'long_fix_mc' :
+if seq_type == 'mix_mc_grat' :
+    N_thetas = 12 # np.linspace(min_theta, max_theta, N_thetas, endpoint = False)
+    min_theta = 0
+    max_theta = np.pi
+    
+    N_Bthetas = 8 # np.linspace(min_btheta, max_btheta, N_Bthetas) / rectification_btheta
+    min_btheta = np.pi/2 
+    max_btheta = np.pi/32
+    rectification_btheta = 2.5
+    
+    min_sf = .3
+    max_sf = .8 # spatial frequency for the gratings, in cpd
+    theta_factor = np.pi/2 #correction to each gratings to align them with MC 
+    
+    stim_duration = .2 # duration of stim for debug purposes
+    inter_duration = .1 # duration of intertrial for debug purposes
+    
+    repetition = 30 # nr of sequence repetition < ----------------------
+    
+    seed = 42 # random state during stim genration
+    
+elif seq_type == 'long_fix_mc' :
     N_thetas = 12 # np.linspace(min_theta, max_theta, N_thetas)
     min_theta = 0
     max_theta = np.pi

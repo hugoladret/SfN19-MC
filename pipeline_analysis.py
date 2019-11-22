@@ -39,6 +39,7 @@ if prm.do_mc :
                    N_thetas = prm.N_thetas, min_theta = prm.min_theta, max_theta = prm.max_theta,
                    N_Bthetas = prm.N_Bthetas, min_btheta = prm.min_btheta, max_btheta = prm.max_btheta,
                    rectification_btheta= prm.rectification_btheta,
+                   min_sf = prm.min_sf, max_sf = prm.max_sf, theta_factor = prm.theta_factor,
                    stim_duration = prm.stim_duration, repetition = prm.repetition, seed = prm.seed,
                    fs = prm.fs, beg_psth = prm.beg_psth, end_psth = prm.end_psth, binsize = prm.binsize,
                    win_size = prm.win_size, step_size = prm.step_size, end_TC = prm.end_TC,
