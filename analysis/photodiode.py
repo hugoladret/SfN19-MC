@@ -20,8 +20,9 @@ def export_sequences_times(folder_list, beg_index, end_index,
         if verbose : print('Extracting from %s folder' % folder)
         signal = np.fromfile('./pipelines/%s/photodiode.bin' % folder, np.int16)
         
+        print(len(signal))        
         beg = int(len(signal)/beg_index)
-        end = end_index * int(len(signal)/beg_index)
+        end = len(signal) - (end_index*fs)
         flash_height_level = np.percentile(signal, flash_height)
         baseline_height_level = np.percentile(signal, baseline_height)
         
@@ -56,34 +57,33 @@ def plot_sequences_length(sequences_times, fs, folder) :
 # 
 # --------------------------------------------------------------
        
+
+
 def get_peak_times(signal, beg_index, end_index,
                    flash_height, baseline_height, width,
                    folder, debug_plot):
     '''
     Plots the [0:beg_index] and [end_index:-1] signal of the photodiode
-    with detected sequences
+    with detected sequences. Beg and end index are purely cosmetic.
     And returns the peaks
     '''
     
-    # Get the end of plateaux, indicating the end of a stimulation
-    flash_ends = np.asarray(custom_peak(signal, width = width, height = flash_height))[:,1]
-    # Get the very first rise above no light levels
-    beg_peak = custom_peak(signal, width = 1000, height = baseline_height)[0][0]
-    # Get the first fall to no light levels, indicating the end of stimulation
+    #used to remove the very last peak
     end_peak = custom_peak(signal[end_index:], width = 200, height = baseline_height)[0][1] + end_index
     
-    # Create a tuple list of sequence beg, end
-    sequences_times = []
-    sequences_times.append((beg_peak, flash_ends[0]))
-    for i, flash_end in enumerate(flash_ends) :
-        try :
-            sequences_times.append((flash_end, flash_ends[i+1]))
-        except IndexError :
-            sequences_times.append((flash_end, end_peak))
+    #the usual, get the chunks above flash_height
+    chunk_list = custom_peak(signal, width = width, height = flash_height)
     
-    # Remove any peak that would happen to occur after fall to no light levels
-    # Likely me not being quick enough to stop recording before the screen flashes
-    # back to Jupyter Notebook bright interface 
+    #i %2 == 0 is a stim, otherwise it's a grey screen
+    sequences_times = []
+    for i, beg in enumerate(chunk_list) :
+        if i%2 == 0 :
+            stim_beg = chunk_list[i][0]
+            stim_end = chunk_list[i+1][1]
+            sequences_times.append((stim_beg, stim_end))
+        else :
+            pass
+
     del_indices = []
     for i, sequence_time in enumerate(list(sequences_times)) :
         if sequence_time[1] >= end_peak :
@@ -106,7 +106,7 @@ def get_peak_times(signal, beg_index, end_index,
                 if i%2 == 0 : y = flash_height
                 else : y = flash_height-25
                 ax[0].plot((sequence_time[0], sequence_time[1]),
-                              (y, y), c = 'g')
+                              (y, y), c = 'r')
                 
         ax[1].set_title('End of the photodiode signal')
         ax[1].plot(signal[end_index:-1], c = 'grey')
@@ -115,13 +115,12 @@ def get_peak_times(signal, beg_index, end_index,
                 if i%2 == 0 : y = flash_height
                 else : y = flash_height-25
                 ax[1].plot((sequence_time[0]-end_index, sequence_time[1]-end_index),
-                              (y, y), c = 'g')
+                              (y, y), c = 'r')
         plt.suptitle(folder)
         fig.savefig('./results/%s/photodiode.pdf' % folder, format = 'pdf', bbox_inches = 'tight')
     plt.show()
         
     return sequences_times2
-
 # --------------------------------------------------------------
 # 
 # --------------------------------------------------------------

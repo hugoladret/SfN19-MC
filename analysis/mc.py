@@ -44,6 +44,15 @@ def mc_analysis(folder_list,
                        stim_duration, repetition, seed,
                        verbose)
         
+        fr_dynamics(folder = folder, merged = True, fs = fs,
+                beg_PST = beg_psth, end_PST = end_psth,
+                win_size = win_size, step_size = step_size,
+                verbose = verbose)
+        fr_dynamics(folder = folder, merged = False, fs = fs,
+                beg_PST = beg_psth, end_PST = end_psth,
+                win_size = win_size, step_size = step_size,
+                verbose = verbose)
+        
         ori_selec(folder = folder, merged = True, fs = fs, end_TC = end_TC,
                   verbose = verbose)
         ori_selec(folder = folder, merged = False, fs = fs, end_TC = end_TC,
@@ -58,14 +67,6 @@ def mc_analysis(folder_list,
              binsize = binsize,
              verbose = verbose)
 
-        '''fr_dynamics(folder = folder, merged = True, fs = fs,
-                beg_PST = beg_psth, end_PST = end_psth,
-                win_size = win_size, step_size = step_size,
-                verbose = verbose)
-        fr_dynamics(folder = folder, merged = False, fs = fs,
-                beg_PST = beg_psth, end_PST = end_psth,
-                win_size = win_size, step_size = step_size,
-                verbose = verbose)'''
 
         neurometric(folder = folder, verbose = verbose)
         
@@ -199,27 +200,69 @@ def ori_selec(folder, merged, fs, end_TC,
         np.save(folder_path + cluster_folder + '/unique_thetas.npy', unique_thetas)
         np.save(folder_path + cluster_folder + '/unique_bthetas.npy', unique_bthetas)
         
+        full_FR = np.load("plot_MC_FR_all.npy")
+        sequences_contents = np.load('sequences_contents.npy', allow_pickle = True)
+        sorted_arr_theta = sorted(sequences_contents, key = lambda x:x['sequence_theta'])
+        unique_thetas = np.unique([x['sequence_theta'] for x in sorted_arr_theta])
+        unique_bthetas = np.unique([x['sequence_btheta'] for x in sorted_arr_theta])
+        
         #---------
         # Merged
         #---------
         if merged : 
         # Iterates through all possible thetas
-            TC_list = []
-            for u_theta in unique_thetas :
+#            TC_list = []
+#            for u_theta in unique_thetas :
+#                
+#                # And through sequences to find them
+#                spikes_per_theta = []
+#                for seq in sorted_arr_theta :
+#                    if seq['sequence_theta'] == u_theta :
+#                        #seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
+#                        #spikes_per_theta.append(seq['tot_spikes']/seq_duration)
+#                        
+#                        sampled_length = int(end_TC*fs) # in hz
+#                        seq_duration = ( (seq['sequence_beg'] + sampled_length) - seq['sequence_beg']) / fs
+#                        spikes_per_theta.append(len(seq['spiketimes'][np.where(seq['spiketimes'] < seq['sequence_beg'] + sampled_length)[0]])/seq_duration)
+#                        
+#                TC_list.append(spikes_per_theta)
                 
-                # And through sequences to find them
-                spikes_per_theta = []
-                for seq in sorted_arr_theta :
-                    if seq['sequence_theta'] == u_theta :
-                        #seq_duration = (seq['sequence_end'] - seq['sequence_beg']) / fs
-                        #spikes_per_theta.append(seq['tot_spikes']/seq_duration)
-                        
-                        sampled_length = int(end_TC*fs) # in hz
-                        seq_duration = ( (seq['sequence_beg'] + sampled_length) - seq['sequence_beg']) / fs
-                        spikes_per_theta.append(len(seq['spiketimes'][np.where(seq['spiketimes'] < seq['sequence_beg'] + sampled_length)[0]])/seq_duration)
-                        
-                TC_list.append(spikes_per_theta)
+            PSTH_list_btheta = []
+            for u_btheta in unique_bthetas :
                 
+                PSTH_list_theta = []
+                for u_theta in unique_thetas : 
+                    # And through sequences to find them
+                    spikes_per_thetabtheta = []
+                    for seq in sorted_arr_theta :
+                        if seq['sequence_theta'] == u_theta and seq['sequence_btheta'] == u_btheta :
+                            seq_beg = seq['sequence_beg'] / fs
+                        
+                            seq_end = seq_beg + 1.5
+                            
+                            ind_beg = int(seq_beg / .002)
+                            ind_end = int(seq_end / .002)
+                            
+                            spikes_per_thetabtheta.append(full_FR[ind_beg : ind_end])
+                            
+                    PSTH_list_theta.append(spikes_per_thetabtheta)
+                PSTH_list_btheta.append(PSTH_list_theta)
+                            
+            arr = np.asarray(PSTH_list_btheta)
+            
+            for precision in np.arange(0,8) :
+            TC = []
+            
+            for angle in np.arange(0,12):
+                inter_trial = []
+                
+                for trial in np.arange(0, arr.shape[2]) : 
+                    curve = np.sum(arr[precision,angle,:trial,:], axis = 0)
+                    max_curve = np.max(curve)
+                    baseline = np.mean(curve[500:], axis = 0)
+                    inter_trial.append(max_curve-baseline)
+                TC.append(np.mean(inter_trial))
+
             means, stds = [], []
             for theta in TC_list : 
                 means.append(np.mean(theta))

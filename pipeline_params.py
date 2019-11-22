@@ -72,10 +72,10 @@ k_init = 'k-means++' # K-means init method, K++ uses the pca as barycenters
 # Photodiode extraction parameters 
 # --------------------------------------------------------------
 beg_index = 30 # int(len(signal)/beg_index), index at which to end the signal beg visualisation
-end_index = 29 # end_index * int(len(signal)/beg_index), index at which to start the signal end visualisation
+end_index = 6 # end = len(signal) - (end_index*fs) seconds at which to start the signal end visualisation
 flash_height_percentile = 99 # np.percentile(signal, 99) height of photodiode blinks
 baseline_height_percentile = 50 # height of the average signal, to distinguish start and end
-width = 280 #units, if there is too much sequences compared to theoritical results, increase this param
+width = 300 #units, if there is too much sequences compared to theoritical results, increase this param
 
 # --------------------------------------------------------------
 # Sequence generation
