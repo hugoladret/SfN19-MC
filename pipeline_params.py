@@ -9,8 +9,8 @@ verbose = True
 # Pre-sorting parameters
 # --------------------------------------------------------------
 kwd_path = ['../rawdata/A005/experiment1_100.raw.kwd'] # path of the raw files, must be of same dimension as experiment_name
-pipeline_name = 'B008' # name of the folder created under /pipelines/
-experiment_name = ['B008'] # name of the temporary files for concatenation cases
+pipeline_name = 'V2' # name of the folder created under /pipelines/
+experiment_name = ['V2'] # name of the temporary files for concatenation cases
 
 channel_map = np.array([1, 17, 16, 32, 3, 19, 14, 30, 9, 25, 10, 20, 8, 24, 2, 29,
                         7, 26, 15, 21, 11, 23, 12, 28, 6, 18, 13, 22, 5, 27, 4, 31]) - 1  # channel map to extract from the raw file
@@ -41,17 +41,17 @@ export = True # moves the files to result folder
 # Usually wav_analysis_folders > other folders, as we want the maximum neurons to run a kmeans
 # But not all of those neurons were recorded during MotionClouds or gratings sessions
 # --------------------------------------------------------------
-do_wav = True
-wav_analysis_folders = ['B008'] # result subfolder to be considered in the waveform analysis process
+do_wav = False
+wav_analysis_folders = ['V2'] # result subfolder to be considered in the waveform analysis process
 
 do_photodiode = True
-photodiode_folders = ['B008']
+photodiode_folders = ['V2']
 
 do_mc = True
-mc_analysis_folders = ['B008'] # result subfolder to be considered in the MotionClouds analysis process
+mc_analysis_folders = ['V2'] # result subfolder to be considered in the MotionClouds analysis process
 
 do_idcard = True
-idcard_folders = ['B008']
+idcard_folders = ['V2']
 
 # --------------------------------------------------------------
 # Waveform analysis parameters
@@ -94,12 +94,13 @@ if seq_type == 'mix_mc_grat' :
     
     min_sf = .3
     max_sf = .8 # spatial frequency for the gratings, in cpd
-    theta_factor = np.pi/2 #correction to each gratings to align them with MC 
+    theta_factor = np.pi/2 #correction to each gratings to align them with MC, purely visual and unused in the code atm
+    # as changing the contents of a product of the list doesnt change the way the lists are shuffled 
     
     stim_duration = .2 # duration of stim for debug purposes
     inter_duration = .1 # duration of intertrial for debug purposes
     
-    repetition = 30 # nr of sequence repetition < ----------------------
+    repetition = 5 # nr of sequence repetition < ----------------------
     
     seed = 42 # random state during stim genration
     
@@ -136,8 +137,8 @@ elif seq_type == 'tc_fix_mc' :
 # --------------------------------------------------------------
 # PSTH
 # --------------------------------------------------------------
-beg_psth = -0.5 #s
-end_psth = 0.5 #s
+beg_psth = -0.1 #s
+end_psth = 0.1 #s
 binsize = 10 #ms
 
 # --------------------------------------------------------------
@@ -149,4 +150,4 @@ step_size = .002 #s
 # --------------------------------------------------------------
 # Tuning curves
 # --------------------------------------------------------------
-end_TC = .2 #s, [0 - end_TC] interval in which to take spikes for TC analysis
+end_TC = .15 #s, [0 - end_TC] interval in which to take spikes for TC analysis
