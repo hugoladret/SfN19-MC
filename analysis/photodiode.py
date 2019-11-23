@@ -19,8 +19,7 @@ def export_sequences_times(folder_list, beg_index, end_index,
     for folder in folder_list :
         if verbose : print('Extracting from %s folder' % folder)
         signal = np.fromfile('./pipelines/%s/photodiode.bin' % folder, np.int16)
-        
-        print(len(signal))        
+         
         beg = int(len(signal)/beg_index)
         end = len(signal) - (end_index*fs)
         flash_height_level = np.percentile(signal, flash_height)
@@ -69,6 +68,7 @@ def get_peak_times(signal, beg_index, end_index,
     '''
     
     #used to remove the very last peak
+    end_index = int(end_index)
     end_peak = custom_peak(signal[end_index:], width = 200, height = baseline_height)[0][1] + end_index
     
     #the usual, get the chunks above flash_height
